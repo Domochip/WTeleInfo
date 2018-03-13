@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="$ShortApplicationName$">
+        <title>Domochip Discover</title>
+        
+        <link rel="stylesheet" href="pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+        <link rel="stylesheet" href="side-menu.css">
+
+    </head>
+    <body>
+
+        <div id="layout">
+            <!-- Menu toggle -->
+            <a href="#menu" id="menuLink" class="menu-link">
+                <!-- Hamburger icon -->
+                <span></span>
+            </a>
+
+            <div id="menu">
+                <div class="pure-menu">
+                    <div class="pure-menu-heading">Domochip</div>
+                    <div class="pure-menu-heading">$ShortApplicationName$</div>
+
+                    <ul class="pure-menu-list">
+                        <li class="pure-menu-item"><a href="./" class="pure-menu-link">Status</a></li>
+                        <li class="pure-menu-item"><a href="config" class="pure-menu-link">Config</a></li>
+                        <li class="pure-menu-item"><a href="fw" class="pure-menu-link">Firmware</a></li>
+                        <li class="pure-menu-item pure-menu-selected"><a href="discover" class="pure-menu-link">Discover</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="main">
+                <div class="header">
+                    <h1>Discover <span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h1>
+                    <span id='i'></span><br>
+                </div>
+                
+                <div class="content">
+                    <h2 class="content-subhead">Discover <span id="l1"><h6 style="display:inline"><b></b></h6></span></h2>
+                    <form class="pure-form pure-form-aligned" id='f'>
+                        <fieldset>
+                            <div class="pure-control-group">
+                                    <label for="nr">Network Range</label>
+                                    <input type='text' id='nr' name='nr' pattern='((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$' required>
+                            </div>
+                            <div class="pure-controls">
+                                <input type='submit' id='RunDisco' value='Run Discover' class="pure-button pure-button-primary">
+                            </div>
+                        </fieldset>
+                    </form>
+                
+                    <h2 class="content-subhead">Modules Found <span id="l2"><h6 style="display:inline"><b></b></h6></span></h2>
+                    <span ></span>
+                    <table id="ModuleListTable" class="pure-table pure-table-horizontal" style="display:none">
+                        <thead><tr><th>IP</th><th>Model</th><th>Version</th><th>S/N</th></tr></thead>
+                        <tbody id='ModuleListBody'></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+        <script>
+            if (!window.jQuery){
+                document.write('<script type="text/javascript" src="/jquery-3.2.1.min.js"><\/script>');
+                document.getElementById('l').innerHTML='<h4 style="display:inline"> (JQuery loaded locally)</h4>';
+            }
+            else $("#l").fadeOut();
+        </script>
+        <script>
+            if (!window.jQuery) {
+                document.getElementById('l').innerHTML='';
+                document.getElementById('l1').innerHTML='<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
+                document.getElementById('l2').innerHTML='<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
+                document.getElementById('i').innerHTML='<h3 style="color:red"> JQuery is required. We were not able to load it :-(</h3>';
+            }
+        </script>
+        <script>
+
+            function getUserIP(n){function e(e){t[e]||n(e),t[e]=!0}var a=new(window.RTCPeerConnection||window.mozRTCPeerConnection||window.webkitRTCPeerConnection)({iceServers:[]}),c=function(){},t={},i=/([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/g;try{a.createDataChannel("")}catch(e){return void n("")}a.createOffer(function(n){n.sdp.split("\n").forEach(function(n){n.indexOf("candidate")<0||n.match(i).forEach(e)}),a.setLocalDescription(n,c,c)},c),a.onicecandidate=function(n){n&&n.candidate&&n.candidate.candidate&&n.candidate.candidate.match(i)&&n.candidate.candidate.match(i).forEach(e)}}
+            
+
+            $("#f").submit(function(event){
+                event.preventDefault();
+
+                var range = []; // number of total requests
+                for(i=1;i<255;i++) range.push(i);
+
+                var networkRange=$("#nr").val().split(".").map(Number);
+                networkRange=networkRange[0]+'.'+networkRange[1]+'.'+networkRange[2]+'.';
+
+                $("#ModuleListBody").empty();
+                $(range).each(function() {
+                    var i = this;
+                    $.getJSON("http://" + networkRange + i + "/ffffffff", function(discoJSON) {
+                         $("#ModuleListTable").show();
+                         $("#ModuleListBody").append('<tr><td><a href="http://'+networkRange+i+'">'+networkRange+i+'</a></td><td>'+discoJSON.m+'</td><td>'+discoJSON.v+'</td><td>'+discoJSON.sn+'</td></tr>');
+                    });
+                });
+            });
+
+            $(document).ready(function(){
+
+                getUserIP(function(ip){
+		            if(ip!="") {
+                        var ipNumbers=ip.split(".").map(Number);
+                        ipNumbers[3]=0;
+                        $("#nr").val(ipNumbers.join("."));
+                    }
+                });
+            });
+        </script>
+        <script src="side-menu.js"></script>
+
+    </body>
+</html>

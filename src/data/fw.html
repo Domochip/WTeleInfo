@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <script> sessionStorage.setItem("ProductName","$ApplicationName$");</script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="$ShortApplicationName$">
+        <title>Domochip $ApplicationName$</title>
+        
+        <link rel="stylesheet" href="pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+        <link rel="stylesheet" href="side-menu.css">
+
+            <script type="text/javascript">
+            function firmwareValidation(){
+                var fn=document.getElementById("fi1").value;
+                if(fn.lastIndexOf("/")!=-1) fn=fn.substring(fn.lastIndexOf("/")+1);
+                if(fn.lastIndexOf("\\")!=-1) fn=fn.substring(fn.lastIndexOf("\\")+1);
+                if(fn.toLowerCase().indexOf(sessionStorage.getItem("ProductName").toLowerCase()) != 0){
+                    alert("You didn't select a valid Firmware file for "+sessionStorage.getItem("ProductName"));
+                    return false;
+                    };
+                var ret=confirm("Are you sure to flash firmware?");
+                if(ret) document.getElementById('r1').innerHTML='In Progress...';
+                return ret;
+            }
+            </script>
+
+    </head>
+    <body>
+        
+                <div id="layout">
+                    <!-- Menu toggle -->
+                    <a href="#menu" id="menuLink" class="menu-link">
+                        <!-- Hamburger icon -->
+                        <span></span>
+                    </a>
+        
+                    <div id="menu">
+                        <div class="pure-menu">
+                            <div class="pure-menu-heading">Domochip</div>
+                            <div class="pure-menu-heading">$ShortApplicationName$</div>
+        
+                            <ul class="pure-menu-list">
+                                <li class="pure-menu-item"><a href="./" class="pure-menu-link">Status</a></li>
+                                <li class="pure-menu-item"><a href="config" class="pure-menu-link">Config</a></li>
+                                <li class="pure-menu-item pure-menu-selected"><a href="fw" class="pure-menu-link">Firmware</a></li>
+                            </ul>
+                        </div>
+                    </div>
+        
+                    <div id="main">
+                        <div class="header">
+                                <h1>Firmware <span id="l1"><h6 style="display:inline"><b> Loading...</b></h6></span></h1>
+                                <span id='i'></span><br>
+                        </div>
+        
+                        <div class="content">
+                        <h3>Upload a new Firmware : </h3>
+                        <form class="pure-form pure-form-aligned" id="f1" method='POST' action='/fw' enctype='multipart/form-data' onsubmit='return firmwareValidation()'>
+                            <fieldset>
+                                <div class="pure-control-group">
+                                    <label for="name">Firmware File</label>
+                                    <input type='file' name='fi1' id='fi1' accept='.bin' required>
+                                </div>
+                                <div class="pure-controls">
+                                    <input type='submit' name='sub1' id='sub1' value='/!\ Upload Firmware /!\' class="pure-button pure-button-primary">
+                                </div>
+                                
+                            </fieldset>
+                        </form>
+                        <span id='r1'></span>
+                        </div>
+                    </div>
+                </div>
+        
+                <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+                <script>
+                    if (!window.jQuery){
+                        document.write('<script type="text/javascript" src="/jquery-3.2.1.min.js"><\/script>');
+                        document.getElementById('l1').innerHTML='<h6 style="display:inline"> (JQuery loaded locally)</h6>';
+                    }
+                    else $("#l1").fadeOut();
+                </script>
+                <script>
+                    if (!window.jQuery) {
+                        document.getElementById('l1').innerHTML='<h6 style="display:inline"> (BASIC MODE)</h6>';
+                        alert('JQuery load failed. UI is in basic mode.');
+                    }
+                </script>
+                <script>
+        
+                    function UploadProgress(r){
+                            var xhr = $.ajaxSettings.xhr() ;
+                            xhr.upload.onprogress = function(evt){ r.html('In Progress'); if(evt.lengthComputable) {r.append(' : '+evt.loaded/evt.total*100+'%');}; } ;
+                            return xhr;
+                    };
+        
+                $("#f1").removeAttr('onsubmit');
+                $("#f1").submit(function(evt){
+                    evt.preventDefault();
+                    if(!firmwareValidation()) return;
+                    $('#fi1').prop("readonly",true);
+                    $('#sub1').prop("disabled",true);
+                    $.ajax({
+                        url:'/fw',type:'POST',cache: false,contentType: false,processData: false,
+                        data:new FormData($('#f1')[0]),
+                        xhr: function(){return UploadProgress($('#r1'));},
+                        success:function(d,s){
+                            var reload15sec=document.createElement('script');
+                            reload15sec.text='var count=14;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
+                            $('#r1').html('<h3><span style="color: green;"><b>Done</b></span> System is rebooting. This page will be reloaded in <span id="cd">15</span>sec.</h3>').append(reload15sec);
+                            $('#f1').trigger('reset');
+                        },
+                        error:function(){
+                            $('#r1').html('<span style="color: red;"><b>Failed</b></span>');
+                            $('#f1').trigger('reset');
+                            $('#fi1').prop("readonly",false);
+                            $('#sub1').prop("disabled",false);
+                        }
+                    });
+                });
+        
+                </script>
+                <script src="side-menu.js"></script>
+            </body>
+        </html>
