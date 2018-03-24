@@ -1,6 +1,8 @@
 #ifndef Main_h
 #define Main_h
 
+#include <arduino.h>
+
 #include "data\status.html.gz.h"
 #include "data\config.html.gz.h"
 #include "data\fw.html.gz.h"
@@ -19,18 +21,16 @@
 //include Application header file
 #include "WirelessTeleInfo.h"
 
-#define APPLICATION_NAME "DomoChip Wireless TeleInfo"
-#define APPLICATION_CLASS WebTeleInfo
-#define APPLICATION_VAR webTeleInfo
+#define APPLICATION1_NAME "WTeleInfo"
+#define APPLICATION1_DESC "DomoChip Wireless TeleInfo"
+#define APPLICATION1_CLASS WebTeleInfo
 
 #define VERSION_NUMBER "3.1.1"
-
-#define MODEL "WTeleInfo"
 
 #define DEFAULT_AP_SSID "WirelessTeleInfo"
 #define DEFAULT_AP_PSK "PasswordTeleInfo"
 
-//Enable developper mode (fwdev webpage and SPIFFS is used)
+//Enable developper mode (SPIFFS editor)
 #define DEVELOPPER_MODE 0
 
 //Pin RX used to receive TéléInformation signal @ 1200bauds

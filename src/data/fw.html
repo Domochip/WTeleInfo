@@ -107,8 +107,8 @@
                         xhr: function(){return UploadProgress($('#r1'));},
                         success:function(d,s){
                             var reload15sec=document.createElement('script');
-                            reload15sec.text='var count=14;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
-                            $('#r1').html('<h3><span style="color: green;"><b>Done</b></span> System is rebooting. This page will be reloaded in <span id="cd">15</span>sec.</h3>').append(reload15sec);
+                            reload15sec.text='var count=19;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
+                            $('#r1').html('<h3><span style="color: green;"><b>Done</b></span> System is rebooting. This page will be reloaded in <span id="cd">20</span>sec.</h3>').append(reload15sec);
                             $('#f1').trigger('reset');
                         },
                         error:function(){

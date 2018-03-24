@@ -33,14 +33,14 @@
 
             <div id="main">
                 <div class="header">
-                    <h1>Configuration <span id="l1"><h6 style="display:inline"><b> Loading...</b></h6></span></h1>
+                    <h1>Configuration<span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h1>
                     <span id='i'></span><br>
                 </div>
 
                 <div class="content">
-                    <form class="pure-form pure-form-aligned" id='f' style='display:none'>
+                    <h2 class="content-subhead">WiFi<span id="lw"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+                    <form class="pure-form pure-form-aligned" id='fw'>
                         <fieldset>
-                            <h2 class="content-subhead">Core</h2>
                             <div class="pure-control-group">
                                 <label for="s">SSID</label>
                                 <input type='text' id='s' name='s' maxlength='32' list="wnl">
@@ -83,8 +83,18 @@
                                     <input type='text' id='dns2' name='dns2' pattern='((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$'>
                                 </div>
                             </div>
-                            
-                                    <div class="pure-control-group">
+                            <div class="pure-controls">
+                                <input type='submit' value='Save' class="pure-button pure-button-primary" disabled>
+                            </div>
+                        </fieldset>
+                    </form>
+                    <span id='rw'></span>
+                    
+        <h2 class="content-subhead">Jeedom<span id="l1"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+        <form class="pure-form pure-form-aligned" id='f1'>
+            <fieldset>
+
+    <div class="pure-control-group">
         <label for="je" class="pure-checkbox">Jeedom Upload</label>
         <input id='je' name='je' type="checkbox">
     </div>
@@ -104,19 +114,18 @@
         </div>
         <div id='jf'>
             <div class="pure-control-group">
-                <label for="c3">TLS FingerPrint</label>
+                <label for="jfp">TLS FingerPrint</label>
                 <input type='text' id='jfp' name='jfp' maxlength='59' pattern='^([0-9A-Fa-f]{2}[ :-]*){19}([0-9A-Fa-f]{2})$' size='65'>
                 <span class="pure-form-message-inline">(separators are : &lt;none&gt;,&lt;space&gt;,:,-)</span>
             </div>
         </div>
     </div>
-
-                            <div class="pure-controls">
-                                <input type='submit' value='Submit Config' class="pure-button pure-button-primary">
-                            </div>
-                        </fieldset>
-                    </form>
-                    <span id='r'></span>
+                <div class="pure-controls">
+                    <input type='submit' value='Save' class="pure-button pure-button-primary" disabled>
+                </div>
+            </fieldset>
+        </form>
+        <span id='r1'></span>
                 </div>
             </div>
         </div>
@@ -124,14 +133,14 @@
         <script>
             if (!window.jQuery){
                 document.write('<script type="text/javascript" src="/jquery-3.2.1.min.js"><\/script>');
-                document.getElementById('l').innerHTML='<h4 style="display:inline"> (JQuery loaded locally)</h4>';
+                document.getElementById('l').innerHTML=' <h4 style="display:inline"> (JQuery loaded locally)</h4>';
             }
             else $("#l").fadeOut();
         </script>
         <script>
             if (!window.jQuery) {
                 document.getElementById('l').innerHTML='';
-                document.getElementById('l1').innerHTML='<h6 style="display:inline;color:red;"><b> Failed</b></h6>';
+                document.getElementById('lw').innerHTML='<h6 style="display:inline;color:red;"><b> Failed</b></h6>';
                 document.getElementById('i').innerHTML='<h3 style="color:red"> JQuery is required. We were not able to load it :-(</h3>';
             }
         </script>
@@ -154,7 +163,7 @@
             };
             $("#staticip").change(onStaticIPChange);
 
-            $("#f").submit(function(event){
+            $("#fw").submit(function(event){
                 if(!$("#staticip").prop("checked")){
                     $("#ip").val('');
                     $("#gw").val('');
@@ -162,15 +171,16 @@
                     $("#dns1").val('');
                     $("#dns2").val('');
                 }
-                $("#r").html("Saving Configuration...");
-                $.post("/sc",$("#f").serialize(),function(){ 
-                    $("#f").hide();
+                $("#rw").html("Saving Configuration...");
+                $.post("/scw",$("#fw").serialize(),function(){ 
+                    $("#fw").hide();
                     var reload10sec=document.createElement('script');
-                    if($("#staticip").prop("checked") && $("#ip").val()!="0.0.0.0") reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.assign("http://' + $("#ip").val() + '/config");}count--;},1000);';
+                    if(!$("#s").val()) reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.assign("http://192.168.4.1/config");}count--;},1000);';
+                    else if($("#staticip").prop("checked") && $("#ip").val()!="0.0.0.0") reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.assign("http://' + $("#ip").val() + '/config");}count--;},1000);';
                     else reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
-                    $('#r').html('<h3><b>Configuration saved <span style="color: green;">successfully</span>. System is restarting now.</b></h3>This page will be reloaded in <span id="cd">10</span>sec.').append(reload10sec);
+                    $('#rw').html('<h3><b>Configuration saved <span style="color: green;">successfully</span>. System is restarting now.</b></h3>This page will be reloaded in <span id="cd">10</span>sec.').append(reload10sec);
                 }).fail(function(){
-                    $('#r').html('<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>');
+                    $('#rw').html('<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>');
                 });
                 event.preventDefault();
             });
@@ -217,32 +227,57 @@
             if($("#jt").prop("checked")) $("#jf").show();
             else $("#jf").hide();
         };
-
         $("#jt").change(onJTChange);
 
-            $(document).ready(function(){
-                $.getJSON("/gc", function(GC){
+        $("#f1").submit(function(event){
+            $("#r1").html("Saving Configuration...");
+            $.post("/sc1",$("#f1").serialize(),function(){ 
+                $("#f1").hide();
+                var reload5sec=document.createElement('script');
+                reload5sec.text='var count=4;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
+                $('#r1').html('<h3><b>Configuration saved <span style="color: green;">successfully</span>. System is restarting now.</b></h3>This page will be reloaded in <span id="cd">5</span>sec.').append(reload5sec);
+            }).fail(function(){
+                $('#r1').html('<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>');
+            });
+            event.preventDefault();
+        });
 
-                    $.each(GC,function(k,v){
+            $(document).ready(function(){
+                $.getJSON("/gcw", function(GCW){
+
+                    $.each(GCW,function(k,v){
 
                         if($('#'+k).prop('type')!='checkbox') $('#'+k).val(v);
-                        else $('#'+k).prop("checked",v=="on");
+                        else $('#'+k).prop("checked",v);
 
                         $('#'+k).trigger("change");
                     })
 
-                    onStaticIPChange();
-
-                    
-
-                    $("#f").show();
-                    $("#l1").fadeOut();
+                    $("input[type=submit]",$("#fw")).prop("disabled",false);
+                    $("#lw").fadeOut();
 
                     getNetworkList();
                 })
                 .fail(function(){
-                    $("#l1").html('<h6 style="display:inline;color:red;"><b> Failed</b></h6>');
+                    $("#lw").html('<h6 style="display:inline;color:red;"><b> Failed</b></h6>');
                 });
+
+                        $.getJSON("/gc1", function(GC1){
+
+            $.each(GC1,function(k,v){
+
+                if($('#'+k).prop('type')!='checkbox') $('#'+k).val(v);
+                else $('#'+k).prop("checked",v);
+
+                $('#'+k).trigger("change");
+            })
+
+            $("input[type=submit]",$("#f1")).prop("disabled",false);
+            $("#l1").fadeOut();
+        })
+        .fail(function(){
+            $("#l1").html('<h6 style="display:inline;color:red;"><b> Failed</b></h6>');
+        });
             });
         </script>
         <script src="side-menu.js"></script>

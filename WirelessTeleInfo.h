@@ -7,16 +7,16 @@
 
 #include "Main.h"
 #include "src\Utils.h"
+#include "src\Base.h"
 
+#include <ESP8266HTTPClient.h>
 #include "LibTeleInfo.h"
 
 const char appDataPredefPassword[] PROGMEM = "ewcXoCt4HHjZUvY1";
 
-//Structure of Application Data 1
-class AppData1 {
+class WebTeleInfo : public Application {
 
-  public:
-
+  private:
     typedef struct {
       bool enabled = false;
       bool tls = false;
@@ -25,25 +25,6 @@ class AppData1 {
       byte fingerPrint[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     } Jeedom;
     Jeedom jeedom;
-
-    void SetDefaultValues() {
-
-      jeedom.enabled = false;
-      jeedom.tls = true;
-      jeedom.hostname[0] = 0;
-      jeedom.apiKey[0] = 0;
-      memset(jeedom.fingerPrint, 0, 20);
-    }
-
-    String GetJSON();
-    bool SetFromParameters(AsyncWebServerRequest* request, AppData1 &tempAppData);
-};
-
-
-class WebTeleInfo {
-
-  private:
-    AppData1* _appData1;
 
     //for returning Status
     String _request;
@@ -56,13 +37,17 @@ class WebTeleInfo {
     String GetLabel(const String &labelName);
     String GetAllLabel();
 
-    String GetStatus();
 
+    void SetConfigDefaultValues();
+    void ParseConfigJSON(JsonObject &root);
+    bool ParseConfigWebRequest(AsyncWebServerRequest *request);
+    String GenerateConfigJSON(bool forSaveFile);
+    String GenerateStatusJSON();
+    bool AppInit(bool reInit);
+    void AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication);
+    void AppRun();
   public:
-    WebTeleInfo();
-    void Init(AppData1 &appData1);
-    void InitWebServer(AsyncWebServer &server);
-    void Run();
+    WebTeleInfo(char appId, String appName);
 };
 
 #endif

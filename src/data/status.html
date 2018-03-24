@@ -38,13 +38,16 @@
                 </div>
 
                 <div class="content">
-                    <h2 class="content-subhead">System <span id="l1"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+                    <h2 class="content-subhead">System<span id="l1"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
 
+                    SN : <span id="sn"></span><br>
                     Build version : <span id="b"></span><br>
                     UpTime : <span id="u"></span><br>
+                    FreeHeap : <span id="f"></span><br>
+
+                    <h2 class="content-subhead">WiFi<span id="l2"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
                     AP : <span id="ap"></span> (<span id="ai"></span>)<br>
                     Station : <span id="sta"></span> (<span id="stai"></span>)<br>
-                    FreeHeap : <span id="f"></span><br>
 
                     $HTMLContent$
                     
@@ -80,6 +83,17 @@
                 })
                 .fail(function(){
                     $("#l1").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
+                });
+
+                $.getJSON("/gsw", function(GSW){
+
+                    $.each(GSW,function(k,v){
+                        $('#'+k).html(v);
+                    })
+                    $("#l2").fadeOut();
+                })
+                .fail(function(){
+                    $("#l2").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
                 });
 
                 $HTMLScriptInReady$

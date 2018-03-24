@@ -13,6 +13,9 @@ bool Utils::FingerPrintS2A(byte* fingerPrintArray, const char* fingerPrintToDeco
 
   if (strlen(fingerPrintToDecode) < 40) return false;
 
+  //first set array bytes to 0;
+  memset(fingerPrintArray, 0, 20);
+
   byte arrayPos = 0;
   for (byte i = 0; i < strlen(fingerPrintToDecode); i++) {
 
