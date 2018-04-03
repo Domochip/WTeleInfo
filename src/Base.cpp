@@ -36,6 +36,11 @@ bool Application::LoadConfig()
 
     configFile.close();
   }
+
+  //if loading failed, then run a Save to write a good one
+  if (!result)
+    SaveConfig();
+    
   return result;
 }
 

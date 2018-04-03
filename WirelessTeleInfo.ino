@@ -23,8 +23,8 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
     }
   }
 
-  //if Jeedom upload not enabled then return
-  if (!jeedom.enabled)
+  //if Home Automation upload not enabled then return
+  if (!ha.enabled)
     return;
 
   //if we didn't find ADCO then we can't send stuff so return
@@ -52,18 +52,23 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
   //create HTTP request
   HTTPClient http;
 
-  //compose URI to request
   String completeURI;
-  completeURI = completeURI + F("http") + (jeedom.tls ? F("s") : F("")) + F("://") + jeedom.hostname + F("/plugins/teleinfo/core/php/jeeTeleinfo.php?api=") + jeedom.apiKey;
-  completeURI = completeURI + F("&ADCO=") + _ADCO + _request;
 
+  //compose URI to request
+  switch (ha.enabled)
+  {
+  case 1:
+    completeURI = completeURI + F("http") + (ha.tls ? F("s") : F("")) + F("://") + ha.hostname + F("/plugins/teleinfo/core/php/jeeTeleinfo.php?api=") + ha.jeedom.apiKey;
+    completeURI = completeURI + F("&ADCO=") + _ADCO + _request;
+    break;
+  }
   //if tls is enabled or not, we need to provide certificate fingerPrint
-  if (!jeedom.tls)
+  if (!ha.tls)
     http.begin(completeURI);
   else
   {
     char fpStr[41];
-    http.begin(completeURI, Utils::FingerPrintA2S(fpStr, jeedom.fingerPrint));
+    http.begin(completeURI, Utils::FingerPrintA2S(fpStr, ha.fingerPrint));
   }
 
   //run request
@@ -111,57 +116,75 @@ String WebTeleInfo::GetAllLabel()
   return galvJSON;
 }
 
-
 void WebTeleInfo::SetConfigDefaultValues()
 {
-  jeedom.enabled = false;
-  jeedom.tls = true;
-  jeedom.hostname[0] = 0;
-  jeedom.apiKey[0] = 0;
-  memset(jeedom.fingerPrint, 0, 20);
+  ha.enabled = 0;
+  ha.tls = false;
+  ha.hostname[0] = 0;
+  memset(ha.fingerPrint, 0, 20);
+
+  ha.jeedom.apiKey[0] = 0;
 }
 
 void WebTeleInfo::ParseConfigJSON(JsonObject &root)
 {
+  //Retrocompatibility block to be removed after v3.1.2 --
   if (root["je"].success())
-    jeedom.enabled = root["je"];
+    ha.enabled = root["je"] ? 1 : 0;
   if (root["jt"].success())
-    jeedom.tls = root["jt"];
+    ha.tls = root["jt"];
   if (root["jh"].success())
-    strlcpy(jeedom.hostname, root["jh"], sizeof(jeedom.hostname));
-  if (root["ja"].success())
-    strlcpy(jeedom.apiKey, root["ja"], sizeof(jeedom.apiKey));
+    strlcpy(ha.hostname, root["jh"], sizeof(ha.hostname));
   if (root["jfp"].success())
-    Utils::FingerPrintS2A(jeedom.fingerPrint, root["jfp"]);
+    Utils::FingerPrintS2A(ha.fingerPrint, root["jfp"]);
+  // --
+
+  if (root[F("hae")].success())
+    ha.enabled = root[F("hae")];
+  if (root[F("hatls")].success())
+    ha.tls = root[F("hatls")];
+  if (root[F("hah")].success())
+    strlcpy(ha.hostname, root["hah"], sizeof(ha.hostname));
+  if (root["hafp"].success())
+    Utils::FingerPrintS2A(ha.fingerPrint, root["hafp"]);
+
+  if (root["ja"].success())
+    strlcpy(ha.jeedom.apiKey, root["ja"], sizeof(ha.jeedom.apiKey));
 }
 
 bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
 {
+  if (request->hasParam(F("hae"), true))
+    ha.enabled = request->getParam(F("hae"), true)->value().toInt();
 
-  char tempApiKey[48 + 1];
+  //if an home Automation system is enabled then get common param
+  if (ha.enabled)
+  {
+    if (request->hasParam(F("hatls"), true))
+      ha.tls = (request->getParam(F("hatls"), true)->value() == F("on"));
+    else
+      ha.tls = false;
+    if (request->hasParam(F("hah"), true) && request->getParam(F("hah"), true)->value().length() < sizeof(ha.hostname))
+      strcpy(ha.hostname, request->getParam(F("hah"), true)->value().c_str());
+    if (request->hasParam(F("hafp"), true))
+      Utils::FingerPrintS2A(ha.fingerPrint, request->getParam(F("hafp"), true)->value().c_str());
+  }
 
-  if (request->hasParam(F("je"), true))
-    jeedom.enabled = (request->getParam(F("je"), true)->value() == F("on"));
-  else
-    jeedom.enabled = false;
-  if (request->hasParam(F("jt"), true))
-    jeedom.tls = (request->getParam(F("jt"), true)->value() == F("on"));
-  else
-    jeedom.tls = false;
-  if (request->hasParam(F("jh"), true) && request->getParam(F("jh"), true)->value().length() < sizeof(jeedom.hostname))
-    strcpy(jeedom.hostname, request->getParam(F("jh"), true)->value().c_str());
-  //put apiKey into temporary one for predefpassword
-  if (request->hasParam(F("ja"), true) && request->getParam(F("ja"), true)->value().length() < sizeof(tempApiKey))
-    strcpy(tempApiKey, request->getParam(F("ja"), true)->value().c_str());
-  if (request->hasParam(F("jfp"), true))
-    Utils::FingerPrintS2A(jeedom.fingerPrint, request->getParam(F("jfp"), true)->value().c_str());
-
-  //check for previous apiKey (there is a predefined special password that mean to keep already saved one)
-  if (strcmp_P(tempApiKey, appDataPredefPassword))
-    strcpy(jeedom.apiKey, tempApiKey);
-
-  if (!jeedom.hostname[0] || !jeedom.apiKey[0])
-    jeedom.enabled = false;
+  //Now get specific param
+  switch (ha.enabled)
+  {
+  case 1: //Jeedom
+    char tempApiKey[48 + 1];
+    //put apiKey into temporary one for predefpassword
+    if (request->hasParam(F("ja"), true) && request->getParam(F("ja"), true)->value().length() < sizeof(tempApiKey))
+      strcpy(tempApiKey, request->getParam(F("ja"), true)->value().c_str());
+    //check for previous apiKey (there is a predefined special password that mean to keep already saved one)
+    if (strcmp_P(tempApiKey, appDataPredefPassword))
+      strcpy(ha.jeedom.apiKey, tempApiKey);
+    if (!ha.hostname[0] || !ha.jeedom.apiKey[0])
+      ha.enabled = 0;
+    break;
+  }
 
   return true;
 }
@@ -171,21 +194,17 @@ String WebTeleInfo::GenerateConfigJSON(bool forSaveFile)
 
   String gc('{');
 
-  gc = gc + F("\"je\":") + (jeedom.enabled ? true : false);
-  gc = gc + F(",\"jt\":") + (jeedom.tls ? true : false);
-  gc = gc + F(",\"jh\":\"") + jeedom.hostname + '"';
+  gc = gc + F("\"hae\":") + ha.enabled;
+  gc = gc + F(",\"hatls\":") + ha.tls;
+  gc = gc + F(",\"hah\":\"") + ha.hostname + '"';
+  gc = gc + F(",\"hafp\":\"") + Utils::FingerPrintA2S(fpStr, ha.fingerPrint, forSaveFile ? 0 : ':') + '"';
   if (forSaveFile)
   {
-    gc = gc + F(",\"ja\":\"") + jeedom.apiKey + '"';
-    Utils::FingerPrintA2S(fpStr, jeedom.fingerPrint);
+    if (ha.enabled == 1)
+      gc = gc + F(",\"ja\":\"") + ha.jeedom.apiKey + '"';
   }
   else
-  {
-    //there is a predefined special password (mean to keep already saved one)
-    gc = gc + F(",\"ja\":\"") + (__FlashStringHelper *)appDataPredefPassword + '"';
-    Utils::FingerPrintA2S(fpStr, jeedom.fingerPrint, ':');
-  }
-  gc = gc + F(",\"jfp\":\"") + fpStr + '"';
+    gc = gc + F(",\"ja\":\"") + (__FlashStringHelper *)appDataPredefPassword + '"'; //predefined special password (mean to keep already saved one)
 
   gc = gc + '}';
 
@@ -196,7 +215,7 @@ String WebTeleInfo::GenerateStatusJSON()
   String gs('{');
 
   gs = gs + F("\"a\":\"") + _ADCO + '"';
-  if (jeedom.enabled)
+  if (ha.enabled)
   {
     gs = gs + F(",\"lr\":\"") + _request + '"';
     gs = gs + F(",\"lrr\":") + _requestResult;

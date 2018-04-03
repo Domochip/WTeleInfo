@@ -250,6 +250,7 @@ bool WifiMan::AppInit(bool reInit = false)
         if (!(WiFi.getMode() & WIFI_AP) && ssid[0])
         {
           WiFi.mode(WIFI_AP);
+          WiFi.softAPdisconnect();
           WiFi.softAP(_apSsid, DEFAULT_AP_PSK, _apChannel);
           Serial.print(F("WiFiDisco : Enabling AP ("));
           Serial.print(WiFi.softAPIP());

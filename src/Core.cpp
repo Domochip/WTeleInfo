@@ -91,7 +91,48 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
     else {
       //Upload failed so restart to Run Application in loop
       pauseApplication = false;
-      AsyncWebServerResponse *response = request->beginResponse(500, F("text/html"), F("Firmware Update Error : End failed"));
+      //Prepare response
+      String errorMsg(Update.getError());
+      errorMsg+=' ';
+      switch(Update.getError()){
+        case UPDATE_ERROR_WRITE:
+          errorMsg=F("Flash Write Failed");
+          break;
+        case UPDATE_ERROR_ERASE:
+          errorMsg=F("Flash Erase Failed");
+          break;
+        case UPDATE_ERROR_READ:
+          errorMsg=F("Flash Read Failed");
+          break;
+        case UPDATE_ERROR_SPACE:
+          errorMsg=F("Not Enough Space");
+          break;
+        case UPDATE_ERROR_SIZE:
+          errorMsg=F("Bad Size Given");
+          break;
+        case UPDATE_ERROR_STREAM:
+          errorMsg=F("Stream Read Timeout");
+          break;
+        case UPDATE_ERROR_MD5:
+          errorMsg=F("MD5 Check Failed");
+          break;
+        case UPDATE_ERROR_FLASH_CONFIG:
+          errorMsg=F("Flash config wrong");
+          break;
+        case UPDATE_ERROR_NEW_FLASH_CONFIG:
+          errorMsg=F("New Flash config wrong");
+          break;
+        case UPDATE_ERROR_MAGIC_BYTE:
+          errorMsg=F("Magic byte is wrong, not 0xE9");
+          break;
+        case UPDATE_ERROR_BOOTSTRAP:
+          errorMsg=F("Invalid bootstrapping state, reset ESP8266 before updating");
+          break;
+        default:
+          errorMsg=F("Unknown error");
+          break;
+      }
+      AsyncWebServerResponse *response = request->beginResponse(500, F("text/html"), errorMsg);
       response->addHeader("Connection", "close");
       request->send(response);
     } }, [&pauseApplication](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
