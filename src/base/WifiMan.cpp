@@ -56,30 +56,40 @@ bool WifiMan::ParseConfigWebRequest(AsyncWebServerRequest *request)
 
   IPAddress ipParser;
   if (request->hasParam(F("ip"), true))
+  {
     if (ipParser.fromString(request->getParam(F("ip"), true)->value()))
       ip = static_cast<uint32_t>(ipParser);
     else
       ip = 0;
+  }
   if (request->hasParam(F("gw"), true))
+  {
     if (ipParser.fromString(request->getParam(F("gw"), true)->value()))
       gw = static_cast<uint32_t>(ipParser);
     else
       gw = 0;
+  }
   if (request->hasParam(F("mask"), true))
+  {
     if (ipParser.fromString(request->getParam(F("mask"), true)->value()))
       mask = static_cast<uint32_t>(ipParser);
     else
       mask = 0;
+  }
   if (request->hasParam(F("dns1"), true))
+  {
     if (ipParser.fromString(request->getParam(F("dns1"), true)->value()))
       dns1 = static_cast<uint32_t>(ipParser);
     else
       dns1 = 0;
+  }
   if (request->hasParam(F("dns2"), true))
+  {
     if (ipParser.fromString(request->getParam(F("dns2"), true)->value()))
       dns2 = static_cast<uint32_t>(ipParser);
     else
       dns2 = 0;
+  }
 
   //check for previous password ssid (there is a predefined special password that mean to keep already saved one)
   if (strcmp_P(tempPassword, predefPassword))
@@ -298,7 +308,6 @@ void WifiMan::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool 
 {
 
   server.on("/wnl", HTTP_GET, [this](AsyncWebServerRequest *request) {
-
     int8_t n = WiFi.scanComplete();
     if (n == -2)
     {

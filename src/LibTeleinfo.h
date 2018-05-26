@@ -109,7 +109,7 @@ class TInfo
   public:
     TInfo();
     void        init();
-    _State_e    process (char c);
+    void    process (char c);
     void        attachADPS(void (*_fn_ADPS)(uint8_t phase));  
     void        attachData(void (*_fn_data)(ValueList * valueslist, uint8_t state));  
     void        attachNewFrame(void (*_fn_new_frame)(ValueList * valueslist));  
@@ -123,7 +123,7 @@ class TInfo
     boolean     listDelete();
 
   private:
-    uint8_t       clearBuffer();
+    void       clearBuffer();
     ValueList *   valueAdd (char * name, char * value, uint8_t checksum, uint8_t * flags);
     boolean       valueRemove (char * name);
     boolean       valueRemoveFlagged(uint8_t flags);

@@ -58,7 +58,7 @@ void Application::Init(bool skipExistingConfig)
     result = LoadConfig();
 
   //Execute specific Application Init Code
-  result = result && AppInit();
+  result = AppInit() && result;
 
   if (result)
     Serial.println(F("OK"));

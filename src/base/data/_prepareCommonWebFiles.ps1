@@ -8,7 +8,7 @@ $listOfFiles="jquery-3.2.1.min.js","pure-min.css","side-menu.css","side-menu.js"
 Import-Module -Name ((Split-Path -Path $MyInvocation.MyCommand.Path)+"\7Zip4Powershell-1.8.0\7Zip4PowerShell")
 
 #function used in Application folder by _prepareWebFiles.ps1
-#It uses html file in src\data as template and then replace special tag with content in ps1 fil in application data folder
+#It uses html file in base\data as template and then replace special tag with content in ps1 fil in application data folder
 #then resulting webpage is stored in application data folder
 function Merge-CustoWithTemplate
 {

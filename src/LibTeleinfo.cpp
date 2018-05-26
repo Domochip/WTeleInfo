@@ -124,7 +124,7 @@ void TInfo::attachUpdatedFrame(std::function<void(ValueList*)> fn_updated_frame)
   Output  : -
   Comments: -
   ====================================================================== */
-uint8_t TInfo::clearBuffer()
+void TInfo::clearBuffer()
 {
   // Clear our buffer, set index to 0
   memset(_recv_buff, 0, TINFO_BUFSIZE);
@@ -553,7 +553,6 @@ boolean TInfo::listDelete()
   ====================================================================== */
 unsigned char TInfo::calcChecksum(char *etiquette, char *valeur)
 {
-  uint8_t i ;
   uint8_t sum = ' ';  // Somme des codes ASCII du message + un espace
 
   // avoid dead loop, always check all is fine
@@ -626,7 +625,6 @@ ValueList * TInfo::checkLine(char * pline)
   char   checksum;
   char  buff[TINFO_BUFSIZE];
   uint8_t flags  = TINFO_FLAGS_NONE;
-  boolean err = true ;  // Assume  error
   int len ; // Group len
 
   if (pline == NULL)
@@ -717,7 +715,7 @@ ValueList * TInfo::checkLine(char * pline)
   Input   : pointer to the serial used
   Output  : teleinfo global state
   ====================================================================== */
-_State_e TInfo::process(char c)
+void TInfo::process(char c)
 {
   // be sure 7 bits only
   c &= 0x7F;

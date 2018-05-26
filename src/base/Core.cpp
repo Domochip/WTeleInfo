@@ -10,8 +10,8 @@
 
 void CoreApplication::SetConfigDefaultValues(){};
 void CoreApplication::ParseConfigJSON(JsonObject &root){};
-bool CoreApplication::ParseConfigWebRequest(AsyncWebServerRequest *request){};
-String CoreApplication::GenerateConfigJSON(bool clearPassword = false){};
+bool CoreApplication::ParseConfigWebRequest(AsyncWebServerRequest *request) { return true; };
+String CoreApplication::GenerateConfigJSON(bool clearPassword = false) { return String(); };
 String CoreApplication::GenerateStatusJSON()
 {
   String gs('{');
@@ -24,6 +24,7 @@ String CoreApplication::GenerateStatusJSON()
   gs = gs + F(",\"b\":\"") + BASE_VERSION + '/' + VERSION + '"';
   gs = gs + F(",\"u\":\"") + (byte)(minutes / 1440) + 'd' + (byte)(minutes / 60 % 24) + 'h' + (byte)(minutes % 60) + 'm' + '"';
   gs = gs + F(",\"f\":") + ESP.getFreeHeap();
+  gs = gs + F(",\"fcrs\":") + ESP.getFlashChipRealSize();
 
   gs = gs + '}';
 
