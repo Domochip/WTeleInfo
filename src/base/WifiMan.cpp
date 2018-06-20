@@ -154,6 +154,8 @@ String WifiMan::GenerateStatusJSON()
   gs = gs + F(",\"sta\":\"") + (ssid[0] ? F("on") : F("off")) + '"';
   gs = gs + F(",\"stai\":\"") + (ssid[0] ? (WiFi.isConnected() ? ((WiFi.localIP().toString() + ' ' + (ip ? F("Static IP") : F("DHCP"))).c_str()) : "Not Connected") : "-") + '"';
 
+  gs = gs + F(",\"mac\":\"") + WiFi.macAddress() + '"';
+
   gs = gs + '}';
 
   return gs;
