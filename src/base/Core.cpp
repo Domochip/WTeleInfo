@@ -1,12 +1,14 @@
 #include "Core.h"
+#include <EEPROM.h>
 #include <SPIFFSEditor.h>
 #include "..\Main.h" //for VERSION define
 #include "Version.h" //for BASE_VERSION define
 
+#include "data\index.html.gz.h"
 #include "data\pure-min.css.gz.h"
 #include "data\side-menu.css.gz.h"
 #include "data\side-menu.js.gz.h"
-#include "data\jquery-3.2.1.min.js.gz.h"
+#include "data\jquery-3.3.1-custo.min.js.gz.h"
 
 void CoreApplication::SetConfigDefaultValues(){};
 void CoreApplication::ParseConfigJSON(JsonObject &root){};
@@ -31,17 +33,50 @@ String CoreApplication::GenerateStatusJSON()
   return gs;
 };
 bool CoreApplication::AppInit(bool reInit = false) { return true; };
+const uint8_t *CoreApplication::GetHTMLContent(WebPageForPlaceHolder wp)
+{
+  switch (wp)
+  {
+  case status:
+    return (const uint8_t *)status0htmlgz;
+    break;
+  case config:
+    return (const uint8_t *)config0htmlgz;
+    break;
+  case fw:
+    return (const uint8_t *)fw0htmlgz;
+    break;
+  case discover:
+    return (const uint8_t *)discover0htmlgz;
+    break;
+  };
+  return nullptr;
+};
+//and his Size
+size_t CoreApplication::GetHTMLContentSize(WebPageForPlaceHolder wp)
+{
+  switch (wp)
+  {
+  case status:
+    return sizeof(status0htmlgz);
+    break;
+  case config:
+    return sizeof(config0htmlgz);
+    break;
+  case fw:
+    return sizeof(fw0htmlgz);
+    break;
+  case discover:
+    return sizeof(discover0htmlgz);
+    break;
+  };
+  return 0;
+};
 void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
 {
   //root is status
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), (const uint8_t *)statushtmlgz, sizeof(statushtmlgz));
-    response->addHeader("Content-Encoding", "gzip");
-    request->send(response);
-  });
-
-  server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), (const uint8_t *)confightmlgz, sizeof(confightmlgz));
+    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), (const uint8_t *)indexhtmlgz, sizeof(indexhtmlgz));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
@@ -64,20 +99,6 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
     sprintf_P(discoJSON, PSTR("{\"sn\":\"%08x\",\"m\":\"%s\",\"v\":\"%s\"}"), ESP.getChipId(), APPLICATION1_NAME, BASE_VERSION "/" VERSION);
     AsyncWebServerResponse *response = request->beginResponse(200, "text/json", discoJSON);
     response->addHeader("Access-Control-Allow-Origin", "*"); //allow this URL to be requested from everywhere
-    request->send(response);
-  });
-
-  //Special Discover page (not listed in default menu
-  server.on("/discover", HTTP_GET, [](AsyncWebServerRequest *request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), (const uint8_t *)discoverhtmlgz, sizeof(discoverhtmlgz));
-    response->addHeader("Content-Encoding", "gzip");
-    request->send(response);
-  });
-
-  //FirmWare URL to get page
-  server.on("/fw", HTTP_GET, [](AsyncWebServerRequest *request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), (const uint8_t *)fwhtmlgz, sizeof(fwhtmlgz));
-    response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
@@ -147,6 +168,8 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
       }
     }
     if (!Update.hasError()) {
+      //Feed the dog otherwise big firmware won't pass
+      ESP.wdtFeed();
       if (Update.write(data, len) != len) {
         Update.printError(Serial);
       }
@@ -158,6 +181,20 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
         Update.printError(Serial);
       }
     } });
+
+  //reboot POST
+  server.on("/rbt", HTTP_POST, [&shouldReboot](AsyncWebServerRequest *request) {
+    request->send_P(200,F("text/html"),PSTR("Reboot command received<script>setTimeout(function(){if('referrer' in document)window.location=document.referrer;},30000);</script>"));
+    shouldReboot = true; });
+
+  //reboot Rescue POST
+  server.on("/rbtrsc", HTTP_POST, [&shouldReboot](AsyncWebServerRequest *request) {
+    request->send_P(200,F("text/html"),PSTR("Reboot in rescue command received<script>setTimeout(function(){if('referrer' in document)window.location=document.referrer;},30000);</script>"));
+    //Set EEPROM for Rescue mode flag
+    EEPROM.begin(4);
+    EEPROM.write(0, 1);
+    EEPROM.end();
+    shouldReboot = true; });
 
   //Ressources URLs
   server.on("/pure-min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -181,8 +218,8 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
     request->send(response);
   });
 
-  server.on("/jquery-3.2.1.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/javascript"), (const uint8_t *)jquery321minjsgz, sizeof(jquery321minjsgz));
+  server.on("/jquery-3.3.1-custo.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/javascript"), (const uint8_t *)jquery331custominjsgz, sizeof(jquery331custominjsgz));
     response->addHeader("Content-Encoding", "gzip");
     response->addHeader("Cache-Control", "max-age=604800, public");
     request->send(response);

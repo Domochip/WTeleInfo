@@ -9,6 +9,11 @@
 #include "base\Utils.h"
 #include "base\Base.h"
 
+#include "data\status1.html.gz.h"
+#include "data\config1.html.gz.h"
+#include "data\fw1.html.gz.h"
+#include "data\discover1.html.gz.h"
+
 #include <ESP8266HTTPClient.h>
 #include <PubSubClient.h>
 #include "LibTeleInfo.h"
@@ -85,6 +90,8 @@ private:
   String GenerateConfigJSON(bool forSaveFile);
   String GenerateStatusJSON();
   bool AppInit(bool reInit);
+  const uint8_t* GetHTMLContent(WebPageForPlaceHolder wp);
+  size_t GetHTMLContentSize(WebPageForPlaceHolder wp);
   void AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication);
   void AppRun();
 

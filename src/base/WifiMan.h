@@ -3,6 +3,9 @@
 
 #include "..\Main.h" //for DEFAULT_AP_SSID and ...PSK
 
+#include "data\statusw.html.gz.h"
+#include "data\configw.html.gz.h"
+
 const char predefPassword[] PROGMEM = "ewcXoCt4HHjZUvY0";
 
 class WifiMan : public Application
@@ -32,6 +35,8 @@ private:
   String GenerateConfigJSON(bool forSaveFile);
   String GenerateStatusJSON();
   bool AppInit(bool reInit);
+  const uint8_t* GetHTMLContent(WebPageForPlaceHolder wp);
+  size_t GetHTMLContentSize(WebPageForPlaceHolder wp);
   void AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication);
   void AppRun();
 

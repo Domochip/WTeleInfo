@@ -306,6 +306,35 @@ bool WifiMan::AppInit(bool reInit = false)
   return result;
 };
 
+const uint8_t* WifiMan::GetHTMLContent(WebPageForPlaceHolder wp){
+  switch(wp){
+    case status:
+      return (const uint8_t*) statuswhtmlgz;
+      break;
+    case config:
+      return (const uint8_t*) configwhtmlgz;
+      break;
+    default:
+      return nullptr;
+      break;
+  };
+  return nullptr;
+};
+size_t WifiMan::GetHTMLContentSize(WebPageForPlaceHolder wp){
+  switch(wp){
+    case status:
+      return sizeof(statuswhtmlgz);
+      break;
+    case config:
+      return sizeof(configwhtmlgz);
+      break;
+    default:
+      return 0;
+      break;
+  };
+  return 0;
+};
+
 void WifiMan::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
 {
 

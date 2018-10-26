@@ -1,0 +1,22 @@
+<div id="applicationName" style="display: none;">WirelessTeleInfo</div>
+<div id="shortApplicationName" style="display: none;">WTeleInfo</div>
+
+<h2 class="content-subhead">TeleInfo<span id="l3"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+Connected ADCO : <span id="a"></span><br>
+<dl>
+    <dt>Home Automation Upload</dt>
+    <dd>Last Request Result : <span id="lrr"></span></dd>
+</dl>
+
+<script>
+    $.getJSON("/gs1", function(GS1){
+
+        $.each(GS1,function(k,v){
+            $('#'+k).html(v);
+        })
+        $("#l3").fadeOut();
+    })
+    .fail(function(){
+        $("#l3").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
+    });
+</script>

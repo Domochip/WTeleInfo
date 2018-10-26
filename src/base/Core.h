@@ -3,6 +3,11 @@
 
 #include "..\Main.h"
 
+#include "data\status0.html.gz.h"
+#include "data\config0.html.gz.h"
+#include "data\fw0.html.gz.h"
+#include "data\discover0.html.gz.h"
+
 class CoreApplication : public Application
 {
 private:
@@ -12,6 +17,8 @@ private:
   String GenerateConfigJSON(bool clearPassword);
   String GenerateStatusJSON();
   bool AppInit(bool reInit);
+  const uint8_t* GetHTMLContent(WebPageForPlaceHolder wp);
+  size_t GetHTMLContentSize(WebPageForPlaceHolder wp);
   void AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication);
   void AppRun(){};
 

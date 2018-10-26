@@ -8,6 +8,14 @@
 class Application
 {
 protected:
+
+  typedef enum{
+    status,
+    config,
+    fw,
+    discover
+  } WebPageForPlaceHolder;
+
   char _appId;
   String _appName;
   bool _reInit = false;
@@ -23,6 +31,8 @@ protected:
   virtual String GenerateConfigJSON(bool forSaveFile = false) = 0;
   virtual String GenerateStatusJSON() = 0;
   virtual bool AppInit(bool reInit = false) = 0;
+  virtual const uint8_t* GetHTMLContent(WebPageForPlaceHolder wp) = 0;
+  virtual size_t GetHTMLContentSize(WebPageForPlaceHolder wp) = 0;
   virtual void AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication) = 0;
   virtual void AppRun() = 0;
 

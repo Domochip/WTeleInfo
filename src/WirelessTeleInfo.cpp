@@ -531,6 +531,43 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   return true;
 }
 //------------------------------------------
+//Return HTML Code to insert into Status Web page
+const uint8_t* WebTeleInfo::GetHTMLContent(WebPageForPlaceHolder wp){
+      switch(wp){
+    case status:
+      return (const uint8_t*) status1htmlgz;
+      break;
+    case config:
+      return (const uint8_t*) config1htmlgz;
+      break;
+    case fw:
+      return (const uint8_t*) fw1htmlgz;
+      break;
+    case discover:
+      return (const uint8_t*) discover1htmlgz;
+      break;
+  };
+  return nullptr;
+};
+//and his Size
+size_t WebTeleInfo::GetHTMLContentSize(WebPageForPlaceHolder wp){
+  switch(wp){
+    case status:
+      return sizeof(status1htmlgz);
+      break;
+    case config:
+      return sizeof(config1htmlgz);
+      break;
+    case fw:
+      return sizeof(fw1htmlgz);
+      break;
+    case discover:
+      return sizeof(discover1htmlgz);
+      break;
+  };
+  return 0;
+};
+//------------------------------------------
 //code to register web request answer to the web server
 void WebTeleInfo::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
 {

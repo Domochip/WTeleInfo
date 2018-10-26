@@ -68,9 +68,47 @@ void Application::Init(bool skipExistingConfig)
 
 void Application::InitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
 {
+  char url[16];
 
-  //Config properties web handler
-  char url[4];
+  //HTML Status handler
+  sprintf_P(url, PSTR("/status%c.html"), _appId);
+  server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), GetHTMLContent(status), GetHTMLContentSize(status));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  //HTML Config handler
+  sprintf_P(url, PSTR("/config%c.html"), _appId);
+  server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), GetHTMLContent(config), GetHTMLContentSize(config));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  //HTML fw handler
+  sprintf_P(url, PSTR("/fw%c.html"), _appId);
+  server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), GetHTMLContent(fw), GetHTMLContentSize(fw));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  //HTML discover handler
+  sprintf_P(url, PSTR("/discover%c.html"), _appId);
+  server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), GetHTMLContent(discover), GetHTMLContentSize(discover));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  //JSON Status handler
+  sprintf_P(url, PSTR("/gs%c"), _appId);
+  server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
+    request->send(200, F("text/json"), GenerateStatusJSON());
+  });
+
+  //JSON Config handler
   sprintf_P(url, PSTR("/gc%c"), _appId);
   server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
     request->send(200, F("text/json"), GenerateConfigJSON());
@@ -93,12 +131,6 @@ void Application::InitWebServer(AsyncWebServer &server, bool &shouldReboot, bool
     }
     else
       request->send(500, F("text/html"), F("Configuration hasn't been saved"));
-  });
-
-  //Status web handler
-  sprintf_P(url, PSTR("/gs%c"), _appId);
-  server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
-    request->send(200, F("text/json"), GenerateStatusJSON());
   });
 
   //Execute Specific Application Web Server initialization

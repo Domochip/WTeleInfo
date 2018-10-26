@@ -2,23 +2,12 @@
 # - GZip of Common web files
 # - Convert compressed web files to C++ header in PROGMEM
 
-$listOfFiles="jquery-3.2.1.min.js","pure-min.css","side-menu.css","side-menu.js"
+$listOfFiles="index.html","config0.html","configw.html","discover0.html","fw0.html","jquery-3.3.1-custo.min.js","pure-min.css","side-menu.css","side-menu.js","status0.html","statusw.html"
 
 
 Import-Module -Name ((Split-Path -Path $MyInvocation.MyCommand.Path)+"\7Zip4Powershell-1.8.0\7Zip4PowerShell")
 
 #function used in Application folder by _prepareWebFiles.ps1
-#It uses html file in base\data as template and then replace special tag with content in ps1 fil in application data folder
-#then resulting webpage is stored in application data folder
-function Merge-CustoWithTemplate
-{
-    PARAM (
-        [string]$Path,
-        [string]$FileName
-    )
-
-}
-
 
 function Remove-StringLatinCharacters
 {
@@ -98,51 +87,6 @@ function Convert-FilesToCppHeader
     }
 
 }
-
-#function that generate Custom web files from templates and customizations and then compresss and convert those to cpp header
-#$templatePath : path of the folder conatining templates
-#$filesAndCusto : structure that contains list of files to customize and for each of those contains customizations (replacement)
-#$destinationPath : path of target folder for generated files
-function Convert-TemplatesWithCustoToCppHeader{
-    PARAM(
-        [string]$templatePath,
-        $filesAndCusto,
-        [string]$destinationPath
-    )
-
-    #foreach file listed in $filesAndCusto
-    foreach($file in $filesAndCusto.Keys)
-    {
-        #if filename is not empty
-        if($file -ne $null -and $file -ne "")
-        {
-            Write-Host ($file+" (customized from template)")
-
-            #load template
-            $templateFile=Get-Content ($templatePath+"\"+$file)
-
-            #foreach line of this template
-            $templateFile | Foreach-Object {
-
-                #copy line
-                $line=$_
-        
-                #foreach replacement that need to be done for this file, apply it on this line
-                foreach($replace in $filesAndCusto[$file].Keys)
-                {
-                    $line=$line.Replace("$"+$replace+"$",$filesAndCusto[$file][$replace])
-                }
-                
-                #output line
-                $line
-            } | Set-Content ($destinationPath+"\"+$file) #save it to destination file
-
-            #use existing function to convert generated customized file into cpp header
-            Convert-FileToCppHeader -Path $destinationPath -FileName $file
-        }
-    }
-}
-
 
 #----- Real Execution of this script -----
 
