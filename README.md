@@ -21,10 +21,7 @@ Tous les fichiers necessaires sont dans le sous-dossier schematic et ont été c
 ![WirelessTeleInfo PCB](https://raw.github.com/J6B/Wireless-TeleInfo-ESP8266/master/img/pcb.jpg)
 
 ### Code/Compile
-Les fichiers sources se trouve dans ce dépôt...
-Pour compiler ce sketch, vous devez d'abord executer le script powerShell du dossier htmlToCppHeader.
-Celui-ci compresse et converti en code (variables PROGMEM) les pages web se trouvant dans le dossier data
-
+Pour compiler ce sketch, vous devez utiliser PlatformIO
 
 
 ## Démarrage
@@ -32,7 +29,7 @@ Celui-ci compresse et converti en code (variables PROGMEM) les pages web se trou
 ### Premier Boot
 Durant le premier boot, l'ESP démarre en mode Point d'Accès afin de le configurer
 
- - SSID : `WirelessTeleInfo`
+ - SSID : `WirelessTeleInfoXXXX`
  - Password : `PasswordTeleInfo`
  - IP : `192.168.4.1`
 
@@ -42,31 +39,39 @@ Connectez vous à ce réseau Wifi puis passer à la configuration.
 
 WirelessTeleInfo possède plusieurs pages web vous permettant de l'administrer/configurer : 
 
- - `http://IP/config` vous permet de modifier la configuration : 
-
-![config screenshot](https://raw.github.com/J6B/Wireless-TeleInfo-ESP8266/master/img/config.png)
-
-	 **ssid & password** : Informations Wifi
-	 **hostname** : nom de l'ESP sur le réseau
-
-	 **Jeedom TeleInfo Plugin** : A cocher si vous souhaitez que ce module pousse les données à Jeedom (Sinon vous pourrez utiliser du requetage JSON)
-	 **SSL/TLS** : à cocher si votre Jeedom utilise de l'HTTPS
-	 **Hostname** : IP ou nom DNS de votre Jeedom
-	 **ApiKey** : API Key de Jeedom
-	 **TLS Fingerprint** : Si HTTPS, vous devez fournir l'empreinte du certificat Jeedom
-
-
  - `http://IP/status` vous retourne l'état du module :
 
 ![status screenshot](https://raw.github.com/J6B/Wireless-TeleInfo-ESP8266/master/img/status.png)
 
+ - `Config` vous permet de modifier la configuration : 
 
- - `http://IP/fw` vous permet de flasher une nouvelle version du firmware (OTA toujours disponible aussi) :
+![config screenshot](https://raw.github.com/J6B/Wireless-TeleInfo-ESP8266/master/img/config.png)
+
+- **ssid & password** : Informations Wifi
+- **hostname** : nom de l'ESP sur le réseau
+- **IP,GW,NetMask,DNS1&2** : configuration IP fixe 
+
+![config2 screenshot](https://raw.github.com/J6B/Wireless-TeleInfo-ESP8266/master/img/config2.png)
+
+- **HA Type** : None (HA make request to the device) or HTTP (device make GET request to HA) or MQTT
+- **SSL/TLS** : check if your MQTT server enforce SSL/TLS
+- **Hostname** : IP or DNS name of your MQTT server
+- **Port** : MQTT Port
+- **Username/Password** : MQTT Username/Password (both are optionnal)
+- **Base Topic** : Prefix of the topic
+
+
+ - `Firmware` vous permet de flasher une nouvelle version du firmware :
 
 ![firmware screenshot](https://raw.github.com/J6B/Wireless-TeleInfo-ESP8266/master/img/fw.png)
 
+- `Discover` vous permet de découvrir tous les device Domochip sur votre réseau :
+
+![discover screenshot](https://raw.github.com/Domochip/Wireless-DS18B20-Bus/master/img/discover.png)
+
+
 ### Rescue Mode
-Si vous perdez l'accès à votre WirelessTeleInfo, vous pouvez `le redémarrer` (couper puis remettre l'alimentation) ET durant les 5 premières secondes, `appuyer sur le bouton "Rescue Mode"`.
+Si vous perdez l'accès à votre WirelessTeleInfo, vous pouvez `le redémarrer` (couper puis remettre l'alimentation) ET durant les 5 premières secondes, `appuyer une fois sur le bouton "Rescue Mode"`.
 Celui-ci va demarrer avec la configuration par défaut (comme au Premier Boot).
 
 
@@ -74,19 +79,28 @@ Celui-ci va demarrer avec la configuration par défaut (comme au Premier Boot).
 
 ## Utilisation
 
-Pour un Jeedom avec le plugin TeleInfo, la configuration suffit!
-Pour une autre solution domotique, vous trouverez dans ce chapitre les infos pour requeter les "étiquettes" de votre compteur EDF
-
 ### Base
 
+De Base, Le module peut-être requeté en HTTP GET
 Usage (les réponses sont au format JSON): 
 
  - `http://IP/getAllLabel` retourne la liste de toutes les étiquettes reçu du compteur
  - `http://IP/getLabel?name=PAPP` retourne l'étiquette souhaitée (ex : PAPP Puissance Apparente)
 
-### Avec Jeedom (mode "universel")
+### Envoi HTTP
 
-TODO
+Le module peut envoyer les informations en faisant des requetes HTTP GET à votre solution domotique
+Sur la page de configuration, choisir le mode HTTP et le type Generic.
+Il vous faudra construire un pattern qui corresponde au attente de votre solution domotique
+ex : `http$tls$://$host$/api/pushValue?id=$label$&value=$val$`
+
+### Avec Jeedom (Plugin TeleInfo)
+
+Sur la page de configuration, choisir le mode HTTP et Jeedom Teleinfo Plugin en Type!
+
+### Envoi MQTT
+
+Le module peut "publier" les informations à serveur MQTT
 
 
 ## Other Sources / Autres Sources
