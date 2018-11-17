@@ -1,0 +1,17 @@
+<h2 class="content-subhead">WiFi<span id="lw"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+MAC : <span id="mac"></span><br>
+AP : <span id="ap"></span> (<span id="ai"></span>)<br>
+Station : <span id="sta"></span> (<span id="stai"></span>)<br>
+
+<script>
+    $.getJSON("/gsw", function(GSW){
+
+        $.each(GSW,function(k,v){
+            $('#'+k).html(v);
+        })
+        $("#lw").fadeOut();
+    })
+    .fail(function(){
+        $("#lw").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
+    });
+</script>

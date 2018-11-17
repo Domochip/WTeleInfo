@@ -1,0 +1,145 @@
+<h2 class="content-subhead">WiFi<span id="lw"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+<form class="pure-form pure-form-aligned" id='fw'>
+    <fieldset>
+        <div class="pure-control-group">
+            <label for="s">SSID</label>
+            <input type='text' id='s' name='s' maxlength='32' list="wnl">
+            <select id="wnl"><option>Searching...</option></select>
+        </div>
+        <div class="pure-control-group">
+            <label for="p">Password</label>
+            <input type='password' id='p' name='p' maxlength='64'>
+        </div>
+        <div class="pure-control-group">
+            <label for="h">Hostname</label>
+            <input type='text' id='h' name='h' maxlength='24'>
+        </div>
+        <div class="pure-control-group">
+            <label for="staticip">Static IP</label>
+            <input id='staticip' name='staticip' type="checkbox">
+        </div>
+        <div id='staticipgroup' style='display:none'>
+            <div class="pure-control-group">
+                <label for="ip">IP</label>
+                <input type='text' id='ip' name='ip' pattern='((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$' required>
+                <span class="pure-form-message-inline">*</span>
+            </div>
+            <div class="pure-control-group">
+                <label for="gw">Gateway</label>
+                <input type='text' id='gw' name='gw' pattern='((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$' required>
+                <span class="pure-form-message-inline">*</span>
+            </div>
+            <div class="pure-control-group">
+                <label for="mask">NetMask</label>
+                <input type='text' id='mask' name='mask' pattern='((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$' required>
+                <span class="pure-form-message-inline">*</span>
+            </div>
+            <div class="pure-control-group">
+                <label for="dns1">DNS 1</label>
+                <input type='text' id='dns1' name='dns1' pattern='((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$'>
+            </div>
+            <div class="pure-control-group">
+                <label for="dns2">DNS 2</label>
+                <input type='text' id='dns2' name='dns2' pattern='((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$'>
+            </div>
+        </div>
+        <div class="pure-controls">
+            <input type='submit' value='Save' class="pure-button pure-button-primary" disabled>
+        </div>
+    </fieldset>
+</form>
+<span id='rw'></span>
+
+<script>
+    function onStaticIPChange(){
+        if($("#staticip").prop("checked")){
+            $("#ip").prop("required",true);
+            $("#gw").prop("required",true);
+            $("#mask").prop("required",true);
+            $("#staticipgroup").show();
+        }
+        else{
+            $("#ip").prop("required",false);
+            $("#gw").prop("required",false);
+            $("#mask").prop("required",false);
+            $("#staticipgroup").hide();
+        }
+    };
+    $("#staticip").change(onStaticIPChange);
+
+    $("#fw").submit(function(event){
+        if(!$("#staticip").prop("checked")){
+            $("#ip").val('');
+            $("#gw").val('');
+            $("#mask").val('');
+            $("#dns1").val('');
+            $("#dns2").val('');
+        }
+        $("#rw").html("Saving Configuration...");
+        $.post("/scw",$("#fw").serialize(),function(){ 
+            $("#fw").hide();
+            var reload10sec=document.createElement('script');
+            if(!$("#s").val()) reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.assign("http://192.168.4.1/config");}count--;},1000);';
+            else if($("#staticip").prop("checked") && $("#ip").val()!="0.0.0.0") reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.assign("http://' + $("#ip").val() + '/config");}count--;},1000);';
+            else reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
+            $('#rw').html('<h3><b>Configuration saved <span style="color: green;">successfully</span>. System is restarting now.</b></h3>This page will be reloaded in <span id="cd">10</span>sec.').append(reload10sec);
+        }).fail(function(){
+            $('#rw').html('<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>');
+        });
+        event.preventDefault();
+    });
+
+    var getNetworkList = function (firstCall=1){
+
+        //allow to trigger refresh of wifi networks
+        if(firstCall==1) $.getJSON("/wnl", function(WNL){});
+
+        $.getJSON("/wnl", function(WNL){
+            if(WNL.r==-2){ //if scan failed
+                $("#wnl").empty();
+                $("#wnl").append('<option>No Network Found</option>');
+            }
+            else if(WNL.r==-1){ //if scan is in progress
+                //try agin this own function without first wnl get
+                setTimeout(getNetworkList,2000,0);
+            }
+            else{ //we got result
+                $("#wnl").empty();
+                if(WNL.r==0){
+                    $("#wnl").append('<option>No Network Found</option>');
+                }
+                else{
+                    $("#wnl").append('<option>Choose Your Network</option>');
+                    $.each(WNL.wnl,function(k,v){
+                        if($("#s").val()==v) $("#wnl").append('<option value="'+v+'" selected>'+v+'</option>');
+                        else $("#wnl").append('<option value="'+v+'">'+v+'</option>');
+                        });
+                    $("#wnl").change(function(){$("#s").val($("#wnl").val())});
+                }
+            }
+        });
+    }
+
+
+
+
+    $.getJSON("/gcw", function(GCW){
+
+        $.each(GCW,function(k,v){
+
+            if($('#'+k).prop('type')!='checkbox') $('#'+k).val(v);
+            else $('#'+k).prop("checked",v);
+
+            $('#'+k).trigger("change");
+        })
+
+        $("input[type=submit]",$("#fw")).prop("disabled",false);
+        $("#lw").fadeOut();
+
+        getNetworkList();
+    })
+    .fail(function(){
+    $("#lw").html('<h6 style="display:inline;color:red;"><b> Failed</b></h6>');
+    });
+
+</script>

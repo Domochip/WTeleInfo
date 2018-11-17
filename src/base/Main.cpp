@@ -27,6 +27,14 @@ bool shouldReboot = false;
 #ifdef APPLICATION1_CLASS
 APPLICATION1_CLASS application1('1', APPLICATION1_NAME);
 #endif
+//Application2 object
+#ifdef APPLICATION2_CLASS
+APPLICATION2_CLASS application2('2', APPLICATION2_NAME);
+#endif
+//Application3 object
+#ifdef APPLICATION3_CLASS
+APPLICATION3_CLASS application3('3', APPLICATION3_NAME);
+#endif
 
 //-----------------------------------------------------------------------
 // Setup function
@@ -98,6 +106,12 @@ void setup()
 #ifdef APPLICATION1_CLASS
   application1.Init(skipExistingConfig);
 #endif
+#ifdef APPLICATION2_CLASS
+  application2.Init(skipExistingConfig);
+#endif
+#ifdef APPLICATION3_CLASS
+  application3.Init(skipExistingConfig);
+#endif
 
   Serial.print(F("Start WebServer : "));
 
@@ -105,6 +119,12 @@ void setup()
   wifiMan.InitWebServer(server, shouldReboot, pauseApplication);
 #ifdef APPLICATION1_CLASS
   application1.InitWebServer(server, shouldReboot, pauseApplication);
+#endif
+#ifdef APPLICATION2_CLASS
+  application2.InitWebServer(server, shouldReboot, pauseApplication);
+#endif
+#ifdef APPLICATION3_CLASS
+  application3.InitWebServer(server, shouldReboot, pauseApplication);
 #endif
   server.begin();
   Serial.println(F("OK"));
@@ -118,10 +138,17 @@ void setup()
 void loop(void)
 {
 
+  if (!pauseApplication){
 #ifdef APPLICATION1_CLASS
-  if (!pauseApplication)
     application1.Run();
 #endif
+#ifdef APPLICATION2_CLASS
+    application2.Run();
+#endif
+#ifdef APPLICATION3_CLASS
+    application3.Run();
+#endif
+  }
 
   wifiMan.Run();
 

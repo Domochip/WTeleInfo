@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+        <title>Domochip</title>
+        
+        <link rel="stylesheet" href="pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+        <link rel="stylesheet" href="side-menu.css">
+        <style>
+            .infotip{background:#1Cb841;padding:0.3em 0.3em;border-radius:3px;color:#fff;font-weight:bold;}
+            .infotipdiv{background:#1Cb841;padding:0.3em 1em;border-radius:3px;color:#fff;margin-bottom: 0.5em;display: inline-block;}
+        </style>
+    </head>
+    <body>
+
+        <div id="layout">
+            <!-- Menu toggle -->
+            <a href="#menu" id="menuLink" class="menu-link">
+                <!-- Hamburger icon -->
+                <span></span>
+            </a>
+
+            <div id="menu">
+                <div class="pure-menu">
+                    <div class="pure-menu-heading">Domochip</div>
+                    <div class="pure-menu-heading" id="menuAppName"></div>
+
+                    <ul class="pure-menu-list" id="menuList">
+                        <li class="pure-menu-item pure-menu-selected" id="menuStatus"><a href="" class="pure-menu-link">Status</a></li>
+                        <li class="pure-menu-item" id="menuConfig"><a href="" class="pure-menu-link">Config</a></li>
+                        <li class="pure-menu-item" id="menuFirmware"><a href="fw" class="pure-menu-link">Firmware</a></li>
+                        <li class="pure-menu-item" id="menuDiscover"><a href="discover" class="pure-menu-link">Discover</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="main">
+                <div class="header">
+                    <h1 id="mainHeader">Status <span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h1>
+                    <span id='i'></span><br>
+                </div>
+
+                <div class="content" id="mainContent">
+                    <div id="content0"></div>
+                    <div id="contentw"></div>
+
+                    <div id="content1"></div>
+                    <div id="content2"></div>
+                    <div id="content3"></div>
+                </div>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script>
+            if (!window.jQuery) document.write('<script type="text/javascript" src="/jquery-3.3.1-custo.min.js"><\/script>');
+            else $("#l").fadeOut();
+        </script>
+        <script>
+            if (!window.jQuery) {
+                document.getElementById('l').innerHTML='';
+                document.getElementById('i').innerHTML='<h3 style="color:red"> JQuery is required. We were not able to load it :-(</h3>';
+            }
+        </script>
+        <script src="side-menu.js"></script>
+        <script>
+
+            function emptyContents(){
+                $("#menuStatus").removeClass("pure-menu-selected");
+                $("#menuConfig").removeClass("pure-menu-selected");
+                $("#menuFirmware").removeClass("pure-menu-selected");
+                $("#menuDiscover").removeClass("pure-menu-selected");
+
+                $("#content0").empty();
+                $("#contentw").empty();
+                $("#content1").empty();
+                $("#content2").empty();
+                $("#content3").empty();
+            };
+
+            $("#menuStatus").click(function(evt){
+                evt.preventDefault();
+                emptyContents();
+                $("#menuStatus").addClass("pure-menu-selected");
+                $("#mainHeader").text("Status");
+                $("#content0").load("/status0.html");
+                $("#contentw").load("/statusw.html");
+
+                $("#content1").load("/status1.html",null,function(){
+                    if($("#applicationName")!=null && $("#applicationName")[0].innerText.length !=0){
+                        $(document).attr("title","Domochip "+$("#applicationName")[0].innerText);
+                        sessionStorage.setItem("ProductName",$("#applicationName")[0].innerText);
+                    }
+                    if($("#shortApplicationName")!=null && $("#shortApplicationName")[0].innerText.length !=0){
+                        $("meta[name='description']").attr("content", $("#shortApplicationName")[0].innerText);
+                        $("#menuAppName").text($("#shortApplicationName")[0].innerText);
+                    }
+                });
+                $("#content2").load("/status2.html");
+                $("#content3").load("/status3.html");
+            });
+            $("#menuStatus").trigger("click");
+
+            $("#menuConfig").click(function(evt){
+                evt.preventDefault();
+                emptyContents();
+                $("#menuConfig").addClass("pure-menu-selected");
+                $("#mainHeader").text("Config");
+                $("#content0").load("/config0.html");
+                $("#contentw").load("/configw.html");
+
+                $("#content1").load("/config1.html");
+                $("#content2").load("/config2.html");
+                $("#content3").load("/config3.html");
+            });
+
+            $("#menuFirmware").click(function(evt){
+                evt.preventDefault();
+                emptyContents();
+                $("#menuFirmware").addClass("pure-menu-selected");
+                $("#mainHeader").text("Firmware");
+                $("#content0").load("/fw0.html");
+            });
+
+            $("#menuDiscover").click(function(evt){
+                evt.preventDefault();
+                emptyContents();
+                $("#menuDiscover").addClass("pure-menu-selected");
+                $("#mainHeader").text("Discover");
+                $("#content0").load("/discover0.html");
+            });
+        </script>
+    </body>
+</html>

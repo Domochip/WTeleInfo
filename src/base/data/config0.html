@@ -1,0 +1,62 @@
+<h2 class="content-subhead">System</h2>
+
+<form class="pure-form pure-form-aligned" id='f0' method='POST' action='/rbt'>
+    <fieldset>                    
+        <div class="pure-controls">
+            <input type='submit' name='subRbt' id='subRbt' value='Reboot' class="pure-button pure-button-primary" style="background: rgb(223, 117, 20);">
+        </div>
+    </fieldset>
+</form>
+<form class="pure-form pure-form-aligned" id='f0b' method='POST' action='/rbtrsc'>
+    <fieldset>                    
+        <div class="pure-controls">
+            <input type='submit' name='subRbtRsc' id='subRbtRsc' value='Reboot in Rescue Mode' class="pure-button pure-button-primary" style="background: rgb(202, 60, 60);">
+        </div>
+    </fieldset>
+</form>
+<span id='r0'></span>
+
+<script>
+    $("#f0").submit(function(evt){
+        evt.preventDefault();
+        $('#subRbt').prop("disabled",true);
+        $('#subRbtRsc').prop("disabled",true);
+        $.ajax({
+            url:'/rbt',type:'POST',cache: false,contentType: false,processData: false,
+            timeout:30000,
+            success:function(d,s){
+                var reload20sec=document.createElement('script');
+                reload20sec.text='var count=19;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
+                $('#r0').html('<h3><span style="color: green;"><b>Done</b></span> System will reboot shortly. Go back to Status page and look for UpTime reset. This page will be reloaded in <span id="cd">20</span>sec.</h3>').append(reload20sec);
+            },
+            error:function(){
+                $('#r0').html('<span style="color: red;"><b>Failed</b></span>');
+                $('#f0').trigger('reset');
+                $('#f0b').trigger('reset');
+                $('#subRbt').prop("disabled",false);
+                $('#subRbtRsc').prop("disabled",false);
+            }
+        });
+    });
+    $("#f0b").submit(function(evt){
+        evt.preventDefault();
+        $('#subRbt').prop("disabled",true);
+        $('#subRbtRsc').prop("disabled",true);
+        $.ajax({
+            url:'/rbtrsc',type:'POST',cache: false,contentType: false,processData: false,
+            timeout:30000,
+            success:function(d,s){
+                var reload20sec=document.createElement('script');
+                reload20sec.text='var count=19;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
+                $('#r0').html('<h3><span style="color: green;"><b>Done</b></span> System will reboot shortly in RESCUE MODE. This page will be reloaded in <span id="cd">20</span>sec.</h3>').append(reload20sec);
+            },
+            error:function(){
+                $('#r0').html('<span style="color: red;"><b>Failed</b></span>');
+                $('#f0').trigger('reset');
+                $('#f0b').trigger('reset');
+                $('#subRbt').prop("disabled",false);
+                $('#subRbtRsc').prop("disabled",false);
+            }
+        });
+    });
+</script>

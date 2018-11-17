@@ -1,0 +1,63 @@
+<script type="text/javascript">
+    function firmwareValidation(){
+        var fn=document.getElementById("fi0").value;
+        if(fn.lastIndexOf("/")!=-1) fn=fn.substring(fn.lastIndexOf("/")+1);
+        if(fn.lastIndexOf("\\")!=-1) fn=fn.substring(fn.lastIndexOf("\\")+1);
+        if(fn.toLowerCase().indexOf(sessionStorage.getItem("ProductName").toLowerCase()) != 0){
+            alert("You didn't select a valid Firmware file for "+sessionStorage.getItem("ProductName"));
+            return false;
+            };
+        var ret=confirm("Are you sure to flash firmware?");
+        if(ret) document.getElementById('r0').innerHTML='In Progress...';
+        return ret;
+    }
+</script>
+
+<h3>Upload a new Firmware : </h3>
+<form class="pure-form pure-form-aligned" id="f0" method='POST' action='/fw' enctype='multipart/form-data' onsubmit='return firmwareValidation()'>
+    <fieldset>
+        <div class="pure-control-group">
+            <label for="name">Firmware File</label>
+            <input type='file' name='fi0' id='fi0' accept='.bin' required>
+        </div>
+        <div class="pure-controls">
+            <input type='submit' name='sub1' id='sub1' value='/!\ Upload Firmware /!\' class="pure-button pure-button-primary">
+        </div>
+        
+    </fieldset>
+</form>
+<span id='r0'></span>
+
+<script>
+    function UploadProgress(r){
+            var xhr = $.ajaxSettings.xhr() ;
+            xhr.upload.onprogress = function(evt){ r.html('In Progress'); if(evt.lengthComputable) {r.append(' : '+evt.loaded/evt.total*100+'%');}; } ;
+            return xhr;
+    };
+
+    $("#f0").removeAttr('onsubmit');
+    $("#f0").submit(function(evt){
+        evt.preventDefault();
+        if(!firmwareValidation()) return;
+        $('#fi0').prop("readonly",true);
+        $('#sub1').prop("disabled",true);
+        $.ajax({
+            url:'/fw',type:'POST',cache: false,contentType: false,processData: false,
+            data:new FormData($('#f0')[0]),
+            timeout:30000,
+            xhr: function(){return UploadProgress($('#r0'));},
+            success:function(d,s){
+                var reload15sec=document.createElement('script');
+                reload15sec.text='var count=19;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
+                $('#r0').html('<h3><span style="color: green;"><b>Done</b></span> System is rebooting. This page will be reloaded in <span id="cd">20</span>sec.</h3>').append(reload15sec);
+                $('#f0').trigger('reset');
+            },
+            error:function(xhr){
+                $('#r0').html('<span style="color: red;"><b>Failed</b></span> ('+xhr.responseText+')');
+                $('#f0').trigger('reset');
+                $('#fi0').prop("readonly",false);
+                $('#sub1').prop("disabled",false);
+            }
+        });
+    });
+</script>

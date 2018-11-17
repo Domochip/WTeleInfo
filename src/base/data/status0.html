@@ -1,0 +1,18 @@
+<h2 class="content-subhead">System<span id="l0"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+
+SN : <span id="sn"></span><br>
+Build version : <span id="b"></span><br>
+UpTime : <span id="u"></span><br>
+FreeHeap : <span id="f"></span><br>
+
+<script>
+    $.getJSON("/gs0", function(GS0){
+        $.each(GS0,function(k,v){
+            $('#'+k).html(v);
+        })
+        $("#l0").fadeOut();
+    })
+    .fail(function(){
+    $("#l0").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
+    });
+</script>
