@@ -71,6 +71,7 @@ void setup()
     EEPROM.write(0, 0);
   EEPROM.end();
 
+#ifdef RESCUE_BTN_PIN
   //if config already skipped, don't wait for rescue button
   if (!skipExistingConfig)
   {
@@ -86,6 +87,7 @@ void setup()
       delay(RESCUE_BUTTON_WAIT * 10);
     }
   }
+#endif
 
   if (skipExistingConfig)
     Serial.println(F("-> RESCUE MODE : Stored configuration won't be loaded."));
@@ -138,7 +140,8 @@ void setup()
 void loop(void)
 {
 
-  if (!pauseApplication){
+  if (!pauseApplication)
+  {
 #ifdef APPLICATION1_CLASS
     application1.Run();
 #endif
