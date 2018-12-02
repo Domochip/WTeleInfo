@@ -14,11 +14,11 @@ Tous les fichiers necessaires sont dans le sous-dossier schematic et ont été c
 
 ### Schematic
 
-![WirelessTeleInfo schematic](https://raw.github.com/Domochip/Wireless-TeleInfo-ESP8266/master/img/schematic.jpg)
+![WirelessTeleInfo schematic](https://raw.github.com/Domochip/Wireless-TeleInfo/master/img/schematic.jpg)
 
 ### PCB
 
-![WirelessTeleInfo PCB](https://raw.github.com/Domochip/Wireless-TeleInfo-ESP8266/master/img/pcb.jpg)
+![WirelessTeleInfo PCB](https://raw.github.com/Domochip/Wireless-TeleInfo/master/img/pcb.jpg)
 
 ### Code/Compile
 Pour compiler ce sketch, vous devez utiliser PlatformIO
@@ -41,17 +41,17 @@ WirelessTeleInfo possède plusieurs pages web vous permettant de l'administrer/c
 
  - `http://IP/status` vous retourne l'état du module :
 
-![status screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo-ESP8266/master/img/status.png)
+![status screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo/master/img/status.png)
 
  - `Config` vous permet de modifier la configuration : 
 
-![config screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo-ESP8266/master/img/config.png)
+![config screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo/master/img/config.png)
 
 - **ssid & password** : Informations Wifi
 - **hostname** : nom de l'ESP sur le réseau
 - **IP,GW,NetMask,DNS1&2** : configuration IP fixe 
 
-![config2 screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo-ESP8266/master/img/config2.png)
+![config2 screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo/master/img/config2.png)
 
 - **HA Type** : None (HA make request to the device) or HTTP (device make GET request to HA) or MQTT
 - **SSL/TLS** : check if your MQTT server enforce SSL/TLS
@@ -63,7 +63,7 @@ WirelessTeleInfo possède plusieurs pages web vous permettant de l'administrer/c
 
  - `Firmware` vous permet de flasher une nouvelle version du firmware :
 
-![firmware screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo-ESP8266/master/img/fw.png)
+![firmware screenshot](https://raw.github.com/Domochip/Wireless-TeleInfo/master/img/fw.png)
 
 - `Discover` vous permet de découvrir tous les device Domochip sur votre réseau :
 
