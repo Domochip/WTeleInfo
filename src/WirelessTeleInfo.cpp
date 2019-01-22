@@ -27,6 +27,10 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
   if (_ha.protocol == HA_PROTO_DISABLED)
     return;
 
+  //if Upload period is not 0 then we don't send values in real time
+  if (_ha.uploadPeriod != 0)
+    return;
+
   //----- HTTP Protocol configured -----
   if (_ha.protocol == HA_PROTO_HTTP)
   {
@@ -147,7 +151,7 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 
   //----- MQTT Protocol configured -----
   if (_ha.protocol == HA_PROTO_MQTT)
-  { //TODO
+  {
     //sn can be used in multiple cases
     char sn[9];
     sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
@@ -188,7 +192,7 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
         completeTopic = _ha.mqtt.generic.baseTopic;
 
         //check for final slash
-        if (completeTopic.length() && completeTopic.charAt(completeTopic.length()-1) != '/')
+        if (completeTopic.length() && completeTopic.charAt(completeTopic.length() - 1) != '/')
           completeTopic += '/';
         break;
       }
@@ -271,12 +275,104 @@ String WebTeleInfo::GetAllLabel()
 }
 
 //------------------------------------------
+// Execute code to upload temperature to MQTT if enable
+void WebTeleInfo::UploadTick()
+{
+  //if Home Automation upload not enabled then return
+  if (_ha.protocol == HA_PROTO_DISABLED)
+    return;
+
+  //----- MQTT Protocol configured -----
+  if (_ha.protocol == HA_PROTO_MQTT)
+  {
+    //sn can be used in multiple cases
+    char sn[9];
+    sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
+
+    //if not connected to MQTT
+    if (!_pubSubClient->connected())
+    {
+      //generate clientID
+      String clientID(F(APPLICATION1_NAME));
+      clientID += sn;
+      //and try to connect
+      if (!_ha.mqtt.username[0])
+        _pubSubClient->connect(clientID.c_str());
+      else
+      {
+        if (!_ha.mqtt.password[0])
+          _pubSubClient->connect(clientID.c_str(), _ha.mqtt.username, NULL);
+        else
+          _pubSubClient->connect(clientID.c_str(), _ha.mqtt.username, _ha.mqtt.password);
+      }
+    }
+
+    //if still not connected
+    if (!_pubSubClient->connected())
+    {
+      //return error code minus 10 (result should be negative)
+      _haSendResult = _pubSubClient->state();
+      _haSendResult -= 10;
+    }
+    // else we are connected
+    else
+    {
+      //prepare topic
+      String completeTopic, thisLabelTopic;
+      switch (_ha.mqtt.type)
+      {
+      case HA_MQTT_GENERIC:
+        completeTopic = _ha.mqtt.generic.baseTopic;
+
+        //check for final slash
+        if (completeTopic.length() && completeTopic.charAt(completeTopic.length() - 1) != '/')
+          completeTopic += '/';
+        break;
+      }
+
+      //Replace placeholders
+      if (completeTopic.indexOf(F("$sn$")) != -1)
+        completeTopic.replace(F("$sn$"), sn);
+
+      if (completeTopic.indexOf(F("$mac$")) != -1)
+        completeTopic.replace(F("$mac$"), WiFi.macAddress());
+
+      if (completeTopic.indexOf(F("$model$")) != -1)
+        completeTopic.replace(F("$model$"), APPLICATION1_NAME);
+
+      if (completeTopic.indexOf(F("$adco$")) != -1)
+        completeTopic.replace(F("$adco$"), _ADCO);
+
+      _haSendResult = true;
+
+      //get Labels list
+      ValueList *me = _tinfo.getList();
+      //go through labels to look for new Value
+      while (me->next && _haSendResult)
+      {
+        me = me->next;
+
+        //copy completeTopic in order to "complete" it ...
+        thisLabelTopic = completeTopic;
+
+        //add the label name
+        thisLabelTopic += me->name;
+
+        //send
+        _haSendResult = _pubSubClient->publish(thisLabelTopic.c_str(), me->value);
+      }
+    }
+  }
+}
+
+//------------------------------------------
 //Used to initialize configuration properties to default values
 void WebTeleInfo::SetConfigDefaultValues()
 {
   _ha.protocol = HA_PROTO_DISABLED;
   _ha.tls = false;
   _ha.hostname[0] = 0;
+  _ha.uploadPeriod = 60;
 
   _ha.http.type = HA_HTTP_GENERIC;
   memset(_ha.http.fingerPrint, 0, 20);
@@ -300,6 +396,8 @@ void WebTeleInfo::ParseConfigJSON(JsonObject &root)
     _ha.tls = root[F("hatls")];
   if (root[F("hahost")].success())
     strlcpy(_ha.hostname, root[F("hahost")], sizeof(_ha.hostname));
+  if (root[F("haupperiod")].success())
+    _ha.uploadPeriod = root[F("haupperiod")];
 
   if (root[F("hahtype")].success())
     _ha.http.type = root[F("hahtype")];
@@ -341,6 +439,8 @@ bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
       _ha.tls = false;
     if (request->hasParam(F("hahost"), true) && request->getParam(F("hahost"), true)->value().length() < sizeof(_ha.hostname))
       strcpy(_ha.hostname, request->getParam(F("hahost"), true)->value().c_str());
+    if (request->hasParam(F("haupperiod"), true))
+      _ha.uploadPeriod = request->getParam(F("haupperiod"), true)->value().toInt();
   }
 
   //Now get specific param
@@ -417,6 +517,7 @@ String WebTeleInfo::GenerateConfigJSON(bool forSaveFile)
   gc = gc + F("\"haproto\":") + _ha.protocol;
   gc = gc + F(",\"hatls\":") + _ha.tls;
   gc = gc + F(",\"hahost\":\"") + _ha.hostname + '"';
+  gc = gc + F(",\"haupperiod\":") + _ha.uploadPeriod;
 
   //if for WebPage or protocol selected is HTTP
   if (!forSaveFile || _ha.protocol == HA_PROTO_HTTP)
@@ -506,6 +607,17 @@ bool WebTeleInfo::AppInit(bool reInit = false)
     }
   }
 
+  //cleanup timer for home Automation
+  if (_haTimer.getNumTimers())
+    _haTimer.deleteTimer(0);
+
+  //if HA and upload period != 0, then start timer
+  if (_ha.protocol != HA_PROTO_DISABLED && _ha.uploadPeriod != 0)
+  {
+    this->UploadTick();
+    _haTimer.setInterval(1000L * _ha.uploadPeriod, [this]() { this->UploadTick(); });
+  }
+
   if (!reInit)
   {
 
@@ -532,32 +644,36 @@ bool WebTeleInfo::AppInit(bool reInit = false)
 }
 //------------------------------------------
 //Return HTML Code to insert into Status Web page
-const uint8_t* WebTeleInfo::GetHTMLContent(WebPageForPlaceHolder wp){
-      switch(wp){
-    case status:
-      return (const uint8_t*) status1htmlgz;
-      break;
-    case config:
-      return (const uint8_t*) config1htmlgz;
-      break;
-    default:
-      return nullptr;
-      break;
+const uint8_t *WebTeleInfo::GetHTMLContent(WebPageForPlaceHolder wp)
+{
+  switch (wp)
+  {
+  case status:
+    return (const uint8_t *)status1htmlgz;
+    break;
+  case config:
+    return (const uint8_t *)config1htmlgz;
+    break;
+  default:
+    return nullptr;
+    break;
   };
   return nullptr;
 };
 //and his Size
-size_t WebTeleInfo::GetHTMLContentSize(WebPageForPlaceHolder wp){
-  switch(wp){
-    case status:
-      return sizeof(status1htmlgz);
-      break;
-    case config:
-      return sizeof(config1htmlgz);
-      break;
-    default:
-      return 0;
-      break;
+size_t WebTeleInfo::GetHTMLContentSize(WebPageForPlaceHolder wp)
+{
+  switch (wp)
+  {
+  case status:
+    return sizeof(status1htmlgz);
+    break;
+  case config:
+    return sizeof(config1htmlgz);
+    break;
+  default:
+    return 0;
+    break;
   };
   return 0;
 };
@@ -601,6 +717,8 @@ void WebTeleInfo::AppRun()
     _pubSubClient->loop();
   if (Serial.available())
     _tinfo.process(Serial.read() & 0x7f);
+  if (_haTimer.getNumTimers())
+    _haTimer.run();
 }
 
 //------------------------------------------

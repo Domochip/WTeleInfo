@@ -16,6 +16,7 @@ const char appDataPredefPassword[] PROGMEM = "ewcXoCt4HHjZUvY1";
 
 #include <ESP8266HTTPClient.h>
 #include <PubSubClient.h>
+#include "SimpleTimer.h"
 #include "LibTeleInfo.h"
 
 class WebTeleInfo : public Application
@@ -61,6 +62,7 @@ private:
     byte protocol = HA_PROTO_DISABLED;
     bool tls = false;
     char hostname[64 + 1] = {0};
+    uint16_t uploadPeriod = 60;
     HTTP http;
     MQTT mqtt;
   } HomeAutomation;
@@ -73,7 +75,7 @@ private:
   char _ADCO[13] = {0};
 
   TInfo _tinfo;
-
+  SimpleTimer _haTimer;
   WiFiClient *_wifiClient = NULL;
   WiFiClientSecure *_wifiClientSecure = NULL;
   PubSubClient *_pubSubClient = NULL;
@@ -81,6 +83,7 @@ private:
   void tinfoUpdatedFrame(ValueList *me);
   String GetLabel(const String &labelName);
   String GetAllLabel();
+  void UploadTick();
 
   void SetConfigDefaultValues();
   void ParseConfigJSON(JsonObject &root);

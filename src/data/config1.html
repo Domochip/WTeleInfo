@@ -33,7 +33,10 @@
         <input type='text' id='hahost' name='hahost' maxlength='64' pattern='[A-Za-z0-9-.]+' size='50' placeholder="IP or DNS Name">
         <span class="pure-form-message-inline">(Hostname should match with certificate name if SSL/TLS is enabled)</span>
     </div>
-
+    <div class="pure-control-group">
+        <label for="haupperiod">Upload Period (s)</label>
+        <input type='number' id='haupperiod' name='haupperiod' min='0' max='65535' placeholder="0=realtime">
+    </div>
 
     <div id='hahe'>
 
