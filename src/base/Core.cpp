@@ -11,7 +11,7 @@
 #include "data\jquery-3.3.1.min.js.gz.h"
 
 void CoreApplication::SetConfigDefaultValues(){};
-void CoreApplication::ParseConfigJSON(JsonObject &root){};
+void CoreApplication::ParseConfigJSON(DynamicJsonDocument &doc){};
 bool CoreApplication::ParseConfigWebRequest(AsyncWebServerRequest *request) { return true; };
 String CoreApplication::GenerateConfigJSON(bool clearPassword = false) { return String(); };
 String CoreApplication::GenerateStatusJSON()

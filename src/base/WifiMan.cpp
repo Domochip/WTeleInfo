@@ -12,26 +12,27 @@ void WifiMan::SetConfigDefaultValues()
   dns2 = 0;
 }
 
-void WifiMan::ParseConfigJSON(JsonObject &root)
+void WifiMan::ParseConfigJSON(DynamicJsonDocument &doc)
 {
-  if (root["s"].success())
-    strlcpy(ssid, root["s"], sizeof(ssid));
+  if (!doc["s"].isNull())
+    strlcpy(ssid, doc["s"], sizeof(ssid));
 
-  if (root["p"].success())
-    strlcpy(password, root["p"], sizeof(password));
-  if (root["h"].success())
-    strlcpy(hostname, root["h"], sizeof(hostname));
+  if (!doc["p"].isNull())
+    strlcpy(password, doc["p"], sizeof(password));
 
-  if (root["ip"].success())
-    ip = root["ip"];
-  if (root["gw"].success())
-    gw = root["gw"];
-  if (root["mask"].success())
-    mask = root["mask"];
-  if (root["dns1"].success())
-    dns1 = root["dns1"];
-  if (root["dns2"].success())
-    dns2 = root["dns2"];
+  if (!doc["h"].isNull())
+    strlcpy(hostname, doc["h"], sizeof(hostname));
+
+  if (!doc["ip"].isNull())
+    ip = doc["ip"];
+  if (!doc["gw"].isNull())
+    gw = doc["gw"];
+  if (!doc["mask"].isNull())
+    mask = doc["mask"];
+  if (!doc["dns1"].isNull())
+    dns1 = doc["dns1"];
+  if (!doc["dns2"].isNull())
+    dns2 = doc["dns2"];
 }
 
 bool WifiMan::ParseConfigWebRequest(AsyncWebServerRequest *request)
@@ -123,8 +124,14 @@ String WifiMan::GenerateConfigJSON(bool forSaveFile = false)
     gc = gc + F(",\"staticip\":") + (ip ? true : false);
     if (ip)
       gc = gc + F(",\"ip\":\"") + IPAddress(ip).toString() + '"';
-    gc = gc + F(",\"gw\":\"") + IPAddress(gw).toString() + '"';
-    gc = gc + F(",\"mask\":\"") + IPAddress(mask).toString() + '"';
+    if (gw)
+      gc = gc + F(",\"gw\":\"") + IPAddress(gw).toString() + '"';
+    else
+      gc = gc + F(",\"gw\":\"0.0.0.0\"");
+    if (mask)
+      gc = gc + F(",\"mask\":\"") + IPAddress(mask).toString() + '"';
+    else
+      gc = gc + F(",\"mask\":\"0.0.0.0\"");
     if (dns1)
       gc = gc + F(",\"dns1\":\"") + IPAddress(dns1).toString() + '"';
     if (dns2)
@@ -306,31 +313,35 @@ bool WifiMan::AppInit(bool reInit = false)
   return result;
 };
 
-const uint8_t* WifiMan::GetHTMLContent(WebPageForPlaceHolder wp){
-  switch(wp){
-    case status:
-      return (const uint8_t*) statuswhtmlgz;
-      break;
-    case config:
-      return (const uint8_t*) configwhtmlgz;
-      break;
-    default:
-      return nullptr;
-      break;
+const uint8_t *WifiMan::GetHTMLContent(WebPageForPlaceHolder wp)
+{
+  switch (wp)
+  {
+  case status:
+    return (const uint8_t *)statuswhtmlgz;
+    break;
+  case config:
+    return (const uint8_t *)configwhtmlgz;
+    break;
+  default:
+    return nullptr;
+    break;
   };
   return nullptr;
 };
-size_t WifiMan::GetHTMLContentSize(WebPageForPlaceHolder wp){
-  switch(wp){
-    case status:
-      return sizeof(statuswhtmlgz);
-      break;
-    case config:
-      return sizeof(configwhtmlgz);
-      break;
-    default:
-      return 0;
-      break;
+size_t WifiMan::GetHTMLContentSize(WebPageForPlaceHolder wp)
+{
+  switch (wp)
+  {
+  case status:
+    return sizeof(statuswhtmlgz);
+    break;
+  case config:
+    return sizeof(configwhtmlgz);
+    break;
+  default:
+    return 0;
+    break;
   };
   return 0;
 };

@@ -16,8 +16,11 @@ const char appDataPredefPassword[] PROGMEM = "ewcXoCt4HHjZUvY1";
 
 #include <ESP8266HTTPClient.h>
 #include <PubSubClient.h>
+#include <SoftwareSerial.h>
 #include "SimpleTimer.h"
 #include "LibTeleInfo.h"
+
+#define TELEINFO_PIN D5
 
 class WebTeleInfo : public Application
 {
@@ -74,6 +77,7 @@ private:
   int _haSendResult = 0;
   char _ADCO[13] = {0};
 
+  SoftwareSerial *_swSerial = NULL;
   TInfo _tinfo;
   SimpleTimer _haTimer;
   WiFiClient *_wifiClient = NULL;
@@ -86,12 +90,12 @@ private:
   void UploadTick();
 
   void SetConfigDefaultValues();
-  void ParseConfigJSON(JsonObject &root);
+  void ParseConfigJSON(DynamicJsonDocument &doc);
   bool ParseConfigWebRequest(AsyncWebServerRequest *request);
   String GenerateConfigJSON(bool forSaveFile);
   String GenerateStatusJSON();
   bool AppInit(bool reInit);
-  const uint8_t* GetHTMLContent(WebPageForPlaceHolder wp);
+  const uint8_t *GetHTMLContent(WebPageForPlaceHolder wp);
   size_t GetHTMLContentSize(WebPageForPlaceHolder wp);
   void AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication);
   void AppRun();

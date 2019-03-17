@@ -20,7 +20,7 @@
 #define APPLICATION1_DESC "DomoChip Wireless TeleInfo"
 #define APPLICATION1_CLASS WebTeleInfo
 
-#define VERSION_NUMBER "3.2.1"
+#define VERSION_NUMBER "3.2.3"
 
 #define DEFAULT_AP_SSID "WirelessTeleInfo"
 #define DEFAULT_AP_PSK "PasswordTeleInfo"
@@ -28,15 +28,11 @@
 //Enable developper mode (SPIFFS editor)
 #define DEVELOPPER_MODE 0
 
-//Pin RX used to receive TéléInformation signal @ 1200bauds
-#define SERIAL_SPEED 1200
-
-//FOR ESP-01 : there is only one serial and RX pin should be up at start, so TeleInfo signal should be controlled by a pin
-//(I cabled GPIO0 instead of GND to the Mosfet with a pull-up resistor, that way, TeleInfo signal comes only if GPIO0 go to GND)
-#define TELEINFO_CONTROL_PIN 0
+//Choose Serial Speed
+#define SERIAL_SPEED 115200
 
 //Choose Pin used to boot in Rescue Mode
-#define RESCUE_BTN_PIN 2
+//#define RESCUE_BTN_PIN 2
 
 //construct Version text
 #if DEVELOPPER_MODE

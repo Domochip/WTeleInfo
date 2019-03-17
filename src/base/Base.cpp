@@ -24,14 +24,33 @@ bool Application::LoadConfig()
   File configFile = SPIFFS.open(String('/') + _appName + F(".json"), "r");
   if (configFile)
   {
-    DynamicJsonBuffer jsonBuffer(512);
 
-    JsonObject &root = jsonBuffer.parseObject(configFile);
-    if (root.success())
+    int memoryAllocation = JSON_DOC_MEM_STEP;
+
+    while (memoryAllocation <= JSON_DOC_MAX_MEM_SIZE)
     {
+      DynamicJsonDocument jsonDoc(memoryAllocation);
 
-      ParseConfigJSON(root);
-      result = true;
+      configFile.seek(0);
+
+      auto deserializeJsonError = deserializeJson(jsonDoc, configFile);
+      //if parsing OK, pass it to application then stop loop
+      if (deserializeJsonError.code() == DeserializationError::Ok)
+      {
+        ParseConfigJSON(jsonDoc);
+        result = true;
+        break;
+      }
+      //if parsing result is not a NoMemory, there is a problem in JSON
+      if (deserializeJsonError.code() != DeserializationError::NoMemory)
+      {
+        Serial.print(F("deserializeJson() failed : "));
+        Serial.println(deserializeJsonError.c_str());
+        break;
+      }
+
+      //there, we need to increase memorySize and loop
+      memoryAllocation += JSON_DOC_MEM_STEP;
     }
 
     configFile.close();
@@ -40,7 +59,7 @@ bool Application::LoadConfig()
   //if loading failed, then run a Save to write a good one
   if (!result)
     SaveConfig();
-    
+
   return result;
 }
 
@@ -116,7 +135,6 @@ void Application::InitWebServer(AsyncWebServer &server, bool &shouldReboot, bool
 
   sprintf_P(url, PSTR("/sc%c"), _appId);
   server.on(url, HTTP_POST, [this](AsyncWebServerRequest *request) {
-
     if (!ParseConfigWebRequest(request))
       return;
 

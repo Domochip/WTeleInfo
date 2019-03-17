@@ -78,11 +78,16 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 
           //if tls is enabled or not, we need to provide certificate fingerPrint
           if (!_ha.tls)
-            http.begin(sendURI);
+          {
+            WiFiClient client;
+            http.begin(client, sendURI);
+          }
           else
           {
+            WiFiClientSecure clientSecure;
             char fpStr[41];
-            http.begin(sendURI, Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
+            clientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
+            http.begin(clientSecure, sendURI);
           }
 
           _haSendResult = (http.GET() == 200);
@@ -135,11 +140,16 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 
       //if tls is enabled or not, we need to provide certificate fingerPrint
       if (!_ha.tls)
-        http.begin(completeURI);
+      {
+        WiFiClient client;
+        http.begin(client, completeURI);
+      }
       else
       {
+        WiFiClientSecure clientSecure;
         char fpStr[41];
-        http.begin(completeURI, Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
+        clientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
+        http.begin(clientSecure, completeURI);
       }
 
       _haSendResult = (http.GET() == 200);
@@ -387,40 +397,39 @@ void WebTeleInfo::SetConfigDefaultValues()
 }
 //------------------------------------------
 //Parse JSON object into configuration properties
-void WebTeleInfo::ParseConfigJSON(JsonObject &root)
+void WebTeleInfo::ParseConfigJSON(DynamicJsonDocument &doc)
 {
+  if (!doc[F("haproto")].isNull())
+    _ha.protocol = doc[F("haproto")];
+  if (!doc[F("hatls")].isNull())
+    _ha.tls = doc[F("hatls")];
+  if (!doc[F("hahost")].isNull())
+    strlcpy(_ha.hostname, doc[F("hahost")], sizeof(_ha.hostname));
+  if (!doc[F("haupperiod")].isNull())
+    _ha.uploadPeriod = doc[F("haupperiod")];
 
-  if (root[F("haproto")].success())
-    _ha.protocol = root[F("haproto")];
-  if (root[F("hatls")].success())
-    _ha.tls = root[F("hatls")];
-  if (root[F("hahost")].success())
-    strlcpy(_ha.hostname, root[F("hahost")], sizeof(_ha.hostname));
-  if (root[F("haupperiod")].success())
-    _ha.uploadPeriod = root[F("haupperiod")];
+  if (!doc[F("hahtype")].isNull())
+    _ha.http.type = doc[F("hahtype")];
+  if (!doc[F("hahfp")].isNull())
+    Utils::FingerPrintS2A(_ha.http.fingerPrint, doc[F("hahfp")]);
 
-  if (root[F("hahtype")].success())
-    _ha.http.type = root[F("hahtype")];
-  if (root[F("hahfp")].success())
-    Utils::FingerPrintS2A(_ha.http.fingerPrint, root[F("hahfp")]);
+  if (!doc[F("hahgup")].isNull())
+    strlcpy(_ha.http.generic.uriPattern, doc[F("hahgup")], sizeof(_ha.http.generic.uriPattern));
 
-  if (root[F("hahgup")].success())
-    strlcpy(_ha.http.generic.uriPattern, root[F("hahgup")], sizeof(_ha.http.generic.uriPattern));
+  if (!doc[F("hahjak")].isNull())
+    strlcpy(_ha.http.jeedom.apiKey, doc[F("hahjak")], sizeof(_ha.http.jeedom.apiKey));
 
-  if (root[F("hahjak")].success())
-    strlcpy(_ha.http.jeedom.apiKey, root[F("hahjak")], sizeof(_ha.http.jeedom.apiKey));
+  if (!doc[F("hamtype")].isNull())
+    _ha.mqtt.type = doc[F("hamtype")];
+  if (!doc[F("hamport")].isNull())
+    _ha.mqtt.port = doc[F("hamport")];
+  if (!doc[F("hamu")].isNull())
+    strlcpy(_ha.mqtt.username, doc[F("hamu")], sizeof(_ha.mqtt.username));
+  if (!doc[F("hamp")].isNull())
+    strlcpy(_ha.mqtt.password, doc[F("hamp")], sizeof(_ha.mqtt.password));
 
-  if (root[F("hamtype")].success())
-    _ha.mqtt.type = root[F("hamtype")];
-  if (root[F("hamport")].success())
-    _ha.mqtt.port = root[F("hamport")];
-  if (root[F("hamu")].success())
-    strlcpy(_ha.mqtt.username, root[F("hamu")], sizeof(_ha.mqtt.username));
-  if (root[F("hamp")].success())
-    strlcpy(_ha.mqtt.password, root[F("hamp")], sizeof(_ha.mqtt.password));
-
-  if (root[F("hamgbt")].success())
-    strlcpy(_ha.mqtt.generic.baseTopic, root[F("hamgbt")], sizeof(_ha.mqtt.generic.baseTopic));
+  if (!doc[F("hamgbt")].isNull())
+    strlcpy(_ha.mqtt.generic.baseTopic, doc[F("hamgbt")], sizeof(_ha.mqtt.generic.baseTopic));
 }
 //------------------------------------------
 //Parse HTTP POST parameters in request into configuration properties
@@ -571,6 +580,13 @@ String WebTeleInfo::GenerateStatusJSON()
 //code to execute during initialization and reinitialization of the app
 bool WebTeleInfo::AppInit(bool reInit = false)
 {
+  //clean
+  if (_swSerial)
+    delete _swSerial;
+  //create SoftwareSerial port
+  _swSerial = new SoftwareSerial(TELEINFO_PIN, TELEINFO_PIN, false, 256);
+  //then start
+  _swSerial->begin(1200);
 
   //Clean up MQTT variables
   if (_pubSubClient)
@@ -621,20 +637,14 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   if (!reInit)
   {
 
-//If a Pin is defined to control TeleInfo signal arrival
-#ifdef TELEINFO_CONTROL_PIN
-    pinMode(TELEINFO_CONTROL_PIN, OUTPUT);
-    digitalWrite(TELEINFO_CONTROL_PIN, LOW);
-#endif
-
     //try to consume Serial Data until end of TeleInfo frame
     char c = 0;
     while (c != 0x03)
     {
-      if (!Serial.available())
+      if (!_swSerial->available())
         delay(100);
-      if (Serial.available())
-        c = Serial.read() & 0x7f;
+      if (_swSerial->available())
+        c = _swSerial->read() & 0x7f;
       else
         break;
     }
@@ -715,8 +725,8 @@ void WebTeleInfo::AppRun()
 {
   if (_pubSubClient)
     _pubSubClient->loop();
-  if (Serial.available())
-    _tinfo.process(Serial.read() & 0x7f);
+  if (_swSerial->available())
+    _tinfo.process(_swSerial->read() & 0x7f);
   if (_haTimer.getNumTimers())
     _haTimer.run();
 }

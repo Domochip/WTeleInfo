@@ -5,6 +5,10 @@
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 
+//Maximum size that can be allocated to Parsed JSON
+#define JSON_DOC_MAX_MEM_SIZE 4096
+#define JSON_DOC_MEM_STEP 256
+
 class Application
 {
 protected:
@@ -26,7 +30,7 @@ protected:
 
   //specialization required from the application
   virtual void SetConfigDefaultValues() = 0;
-  virtual void ParseConfigJSON(JsonObject &root) = 0;
+  virtual void ParseConfigJSON(DynamicJsonDocument &doc) = 0;
   virtual bool ParseConfigWebRequest(AsyncWebServerRequest *request) = 0;
   virtual String GenerateConfigJSON(bool forSaveFile = false) = 0;
   virtual String GenerateStatusJSON() = 0;
