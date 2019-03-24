@@ -353,12 +353,16 @@ void WifiMan::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool 
     int8_t n = WiFi.scanComplete();
     if (n == -2)
     {
-      request->send(200, F("text/json"), F("{\"r\":-2,\"wnl\":[]}"));
+      AsyncWebServerResponse *response = request->beginResponse(200, F("text/json"), F("{\"r\":-2,\"wnl\":[]}"));
+      response->addHeader("Cache-Control", "no-cache");
+      request->send(response);
       WiFi.scanNetworks(true);
     }
     else if (n == -1)
     {
-      request->send(200, F("text/json"), F("{\"r\":-1,\"wnl\":[]}"));
+      AsyncWebServerResponse *response = request->beginResponse(200, F("text/json"), F("{\"r\":-1,\"wnl\":[]}"));
+      response->addHeader("Cache-Control", "no-cache");
+      request->send(response);
     }
     else
     {
@@ -371,7 +375,9 @@ void WifiMan::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool 
           networksJSON += ',';
       }
       networksJSON += F("]}");
-      request->send(200, F("text/json"), networksJSON);
+      AsyncWebServerResponse *response = request->beginResponse(200, F("text/json"), networksJSON);
+      response->addHeader("Cache-Control", "no-cache");
+      request->send(response);
       WiFi.scanDelete();
       if (WiFi.scanComplete() == -2)
         WiFi.scanNetworks(true);

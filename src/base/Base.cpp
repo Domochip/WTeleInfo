@@ -124,13 +124,17 @@ void Application::InitWebServer(AsyncWebServer &server, bool &shouldReboot, bool
   //JSON Status handler
   sprintf_P(url, PSTR("/gs%c"), _appId);
   server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
-    request->send(200, F("text/json"), GenerateStatusJSON());
+    AsyncWebServerResponse *response = request->beginResponse(200, F("text/json"), GenerateStatusJSON());
+    response->addHeader("Cache-Control", "no-cache");
+    request->send(response);
   });
 
   //JSON Config handler
   sprintf_P(url, PSTR("/gc%c"), _appId);
   server.on(url, HTTP_GET, [this](AsyncWebServerRequest *request) {
-    request->send(200, F("text/json"), GenerateConfigJSON());
+    AsyncWebServerResponse *response = request->beginResponse(200, F("text/json"), GenerateConfigJSON());
+    response->addHeader("Cache-Control", "no-cache");
+    request->send(response);
   });
 
   sprintf_P(url, PSTR("/sc%c"), _appId);

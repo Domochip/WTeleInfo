@@ -51,95 +51,98 @@
 <span id='rw'></span>
 
 <script>
-    function onStaticIPChange(){
-        if($("#staticip").prop("checked")){
-            $("#ip").prop("required",true);
-            $("#gw").prop("required",true);
-            $("#mask").prop("required",true);
-            $("#staticipgroup").show();
+    $("#staticip").addEventListener('change', function (){
+        if($("#staticip").checked){
+            $("#ip").required=true;
+            $("#gw").required=true;
+            $("#mask").required=true;
+            $("#staticipgroup").style.display='';
         }
         else{
-            $("#ip").prop("required",false);
-            $("#gw").prop("required",false);
-            $("#mask").prop("required",false);
-            $("#staticipgroup").hide();
+            $("#ip").required=false;
+            $("#gw").required=false;
+            $("#mask").required=false;
+            $("#staticipgroup").style.display='none';
         }
-    };
-    $("#staticip").change(onStaticIPChange);
+    });
 
-    $("#fw").submit(function(event){
-        if(!$("#staticip").prop("checked")){
-            $("#ip").val('');
-            $("#gw").val('');
-            $("#mask").val('');
-            $("#dns1").val('');
-            $("#dns2").val('');
+    $("#fw").addEventListener('submit',function(event){
+        if(!$("#staticip").checked){
+            $("#ip").value='';
+            $("#gw").value='';
+            $("#mask").value='';
+            $("#dns1").value='';
+            $("#dns2").value='';
         }
-        $("#rw").html("Saving Configuration...");
-        $.post("/scw",$("#fw").serialize(),function(){ 
-            $("#fw").hide();
-            var reload10sec=document.createElement('script');
-            if(!$("#s").val()) reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.assign("http://192.168.4.1/config");}count--;},1000);';
-            else if($("#staticip").prop("checked") && $("#ip").val()!="0.0.0.0") reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.assign("http://' + $("#ip").val() + '/config");}count--;},1000);';
-            else reload10sec.text='var count=9;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
-            $('#rw').html('<h3><b>Configuration saved <span style="color: green;">successfully</span>. System is restarting now.</b></h3>This page will be reloaded in <span id="cd">10</span>sec.').append(reload10sec);
-        }).fail(function(){
-            $('#rw').html('<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>');
-        });
+        $("#rw").innerHTML="Saving Configuration...";
+        post("/scw",
+            new FormData($("#fw")),
+            function(){ 
+                $("#fw").style.display='none';
+
+                var reloadCode='var count=9;var cdi=setInterval(function(){$("#cd").innerText=count;if(!count){clearInterval(cdi);'
+                if(!$("#s").value) reloadCode+='location.assign("http://192.168.4.1");';
+                else if($("#staticip").checked && $("#ip").value!="0.0.0.0") reloadCode+='location.assign("http://' + $("#ip").value + '");';
+                else reloadCode+='location.reload();';
+                reloadCode+='}count--;},1000);';
+
+                $('#rw').innerHTML='<h3><b>Configuration saved <span style="color: green;">successfully</span>. System is restarting now.</b></h3>This page will be reloaded in <span id="cd">10</span>sec.';
+                runScript(reloadCode);
+            },
+            function(){
+                $('#rw').innerHTML = '<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>';
+            }
+        );
         event.preventDefault();
     });
 
-    var getNetworkList = function (firstCall=1){
+    var getNetworkList = function (firstCall){
 
-        //allow to trigger refresh of wifi networks
-        if(firstCall==1) $.getJSON("/wnl", function(WNL){});
+        if(firstCall===undefined) get("/wnl");
 
-        $.getJSON("/wnl", function(WNL){
+        getJSON("/wnl", function(WNL){
             if(WNL.r==-2){ //if scan failed
-                $("#wnl").empty();
-                $("#wnl").append('<option>No Network Found</option>');
+                $("#wnl").innerHTML='<option>No Network Found</option>';
             }
             else if(WNL.r==-1){ //if scan is in progress
                 //try agin this own function without first wnl get
                 setTimeout(getNetworkList,2000,0);
             }
             else{ //we got result
-                $("#wnl").empty();
                 if(WNL.r==0){
-                    $("#wnl").append('<option>No Network Found</option>');
+                    $("#wnl").innerHTML='<option>No Network Found</option>';
                 }
                 else{
-                    $("#wnl").append('<option>Choose Your Network</option>');
-                    $.each(WNL.wnl,function(k,v){
-                        if($("#s").val()==v) $("#wnl").append('<option value="'+v+'" selected>'+v+'</option>');
-                        else $("#wnl").append('<option value="'+v+'">'+v+'</option>');
-                        });
-                    $("#wnl").change(function(){$("#s").val($("#wnl").val())});
+                    $("#wnl").innerHTML='<option>Choose Your Network</option>';
+                    for(k in WNL.wnl){
+                        if($("#s").value==WNL.wnl[k]) $("#wnl").innerHTML+='<option value="'+WNL.wnl[k]+'" selected>'+WNL.wnl[k]+'</option>';
+                        else $("#wnl").innerHTML+='<option value="'+WNL.wnl[k]+'">'+WNL.wnl[k]+'</option>';
+                    }
+                    $("#wnl").addEventListener('change',function(){$("#s").value=$("#wnl").value});
                 }
             }
         });
     }
 
 
+    getJSON("/gcw",
+        function(GCW){
+            for(k in GCW){
+                if($('#'+k)){
+                    if($('#'+k).type!='checkbox') $('#'+k).value=GCW[k];
+                    else $('#'+k).checked=GCW[k];
 
+                    triggerEvent($('#'+k),'change');
+                }
+            }
 
-    $.getJSON("/gcw", function(GCW){
+            $("#fw input[type=submit]").disabled=false;
+            fadeOut($("#lw"));
 
-        $.each(GCW,function(k,v){
-
-            if($('#'+k).prop('type')!='checkbox') $('#'+k).val(v);
-            else $('#'+k).prop("checked",v);
-
-            $('#'+k).trigger("change");
-        })
-
-        $("input[type=submit]",$("#fw")).prop("disabled",false);
-        $("#lw").fadeOut();
-
-        getNetworkList();
-    })
-    .fail(function(){
-    $("#lw").html('<h6 style="display:inline;color:red;"><b> Failed</b></h6>');
-    });
+            getNetworkList();
+        },function(){
+            $("#lw").innerHTML = '<h6 style="display:inline;color:red;"><b> Failed</b></h6>';
+        }
+    );
 
 </script>

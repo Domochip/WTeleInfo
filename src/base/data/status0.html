@@ -6,13 +6,12 @@ UpTime : <span id="u"></span><br>
 FreeHeap : <span id="f"></span><br>
 
 <script>
-    $.getJSON("/gs0", function(GS0){
-        $.each(GS0,function(k,v){
-            $('#'+k).html(v);
-        })
-        $("#l0").fadeOut();
-    })
-    .fail(function(){
-    $("#l0").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
+    getJSON("/gs0", function (GS0) {
+        for(k in GS0){
+            if((e = $('#' + k)) != undefined) e.innerHTML = GS0[k];
+        }
+        fadeOut($("#l0"));
+    }, function () {
+        $("#l0").innerHTML = '<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
     });
 </script>

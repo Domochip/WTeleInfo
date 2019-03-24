@@ -26,25 +26,24 @@
         if(ip!="") {
             var ipNumbers=ip.split(".").map(Number);
             ipNumbers[3]=0;
-            $("#nr").val(ipNumbers.join("."));
+            $("#nr").value=ipNumbers.join(".");
         }
     });
     
-    $("#f0").submit(function(event){
+    $("#f0").addEventListener('submit',function(event){
         event.preventDefault();
 
-        var range = []; // number of total requests
+        var range = []; // will contains 1 to 254
         for(i=1;i<255;i++) range.push(i);
 
-        var networkRange=$("#nr").val().split(".").map(Number);
+        var networkRange=$("#nr").value.split(".").map(Number);
         networkRange=networkRange[0]+'.'+networkRange[1]+'.'+networkRange[2]+'.';
 
-        $("#ModuleListBody").empty();
-        $(range).each(function() {
-            var i = this;
-            $.getJSON("http://" + networkRange + i + "/ffffffff", function(discoJSON) {
-                    $("#ModuleListTable").show();
-                    $("#ModuleListBody").append('<tr><td><a href="http://'+networkRange+i+'">'+networkRange+i+'</a></td><td>'+discoJSON.m+'</td><td>'+discoJSON.v+'</td><td>'+discoJSON.sn+'</td></tr>');
+        $("#ModuleListBody").innerHTML='';
+        range.forEach(function (i) {
+            getJSON("http://" + networkRange + i + "/ffffffff", function (discoJSON) {
+                $("#ModuleListTable").style.display='';
+                $("#ModuleListBody").innerHTML+='<tr><td><a href="http://' + networkRange + i + '">' + networkRange + i + '</a></td><td>' + discoJSON.m + '</td><td>' + discoJSON.v + '</td><td>' + discoJSON.sn + '</td></tr>'
             });
         });
     });

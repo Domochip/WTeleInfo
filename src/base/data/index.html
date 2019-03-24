@@ -38,8 +38,7 @@
 
             <div id="main">
                 <div class="header">
-                    <h1 id="mainHeader">Status <span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h1>
-                    <span id='i'></span><br>
+                    <h1 id="mainHeader"></h1>
                 </div>
 
                 <div class="content" id="mainContent">
@@ -52,83 +51,152 @@
                 </div>
             </div>
         </div>
-        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
         <script>
-            if (!window.jQuery) document.write('<script type="text/javascript" src="/jquery-3.3.1.min.js"><\/script>');
-            else $("#l").fadeOut();
-        </script>
-        <script>
-            if (!window.jQuery) {
-                document.getElementById('l').innerHTML='';
-                document.getElementById('i').innerHTML='<h3 style="color:red"> JQuery is required. We were not able to load it :-(</h3>';
+            //from https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/QuerySelector
+            function $(selector,el) {
+                if (!el) el=document;
+                return el.querySelector(selector);
             }
         </script>
         <script src="side-menu.js"></script>
         <script>
+            function runScript(code){
+                var scr = document.createElement('script');
+                scr.text=code;
+                var elemForDebug=document.head.appendChild(scr);
+                elemForDebug.parentNode.removeChild(scr);
+            }
 
-            function emptyContents(){
-                $("#menuStatus").removeClass("pure-menu-selected");
-                $("#menuConfig").removeClass("pure-menu-selected");
-                $("#menuFirmware").removeClass("pure-menu-selected");
-                $("#menuDiscover").removeClass("pure-menu-selected");
-
-                $("#content0").empty();
-                $("#contentw").empty();
-                $("#content1").empty();
-                $("#content2").empty();
-                $("#content3").empty();
-            };
-
-            $("#menuStatus").click(function(evt){
-                evt.preventDefault();
-                emptyContents();
-                $("#menuStatus").addClass("pure-menu-selected");
-                $("#mainHeader").text("Status");
-                $("#content0").load("/status0.html");
-                $("#contentw").load("/statusw.html");
-
-                $("#content1").load("/status1.html",null,function(){
-                    if($("#applicationName")!=null && $("#applicationName")[0].innerText.length !=0){
-                        $(document).attr("title","Domochip "+$("#applicationName")[0].innerText);
-                        sessionStorage.setItem("ProductName",$("#applicationName")[0].innerText);
-                    }
-                    if($("#shortApplicationName")!=null && $("#shortApplicationName")[0].innerText.length !=0){
-                        $("meta[name='description']").attr("content", $("#shortApplicationName")[0].innerText);
-                        $("#menuAppName").text($("#shortApplicationName")[0].innerText);
+            function request(method,url,data,success,fail,timeout,uploadProgress){
+                var xhr = new XMLHttpRequest();
+                xhr.addEventListener('readystatechange',function(){
+                    if(xhr.readyState === 4){
+                        if(xhr.status === 200){
+                            if(success) success(xhr.response);
+                        }
+                        else{
+                            if(fail) fail(xhr.response);
+                        }
                     }
                 });
-                $("#content2").load("/status2.html");
-                $("#content3").load("/status3.html");
-            });
-            $("#menuStatus").trigger("click");
+                if(uploadProgress) xhr.upload.addEventListener('progress',uploadProgress);
+                xhr.open(method, url);
+                if(timeout) xhr.timeout=timeout;
+                xhr.send(data);
+            }
 
-            $("#menuConfig").click(function(evt){
+            function load(element,url,callback){
+                request("GET",url,null,function(response){
+                    element.innerHTML='';
+                    element.innerHTML=response;
+                    var scriptList = element.getElementsByTagName('script');
+                    for(var i=0;i<scriptList.length;i++) runScript(scriptList[i].innerHTML);
+                    if(callback) callback();
+                });
+            };
+
+            function get(url,success,fail){
+                request("GET",url,null,success,fail);
+            };
+
+            function getJSON(url,success,fail){
+                request("GET",url,null,function(response){
+                    success(JSON.parse(response));
+                },fail);
+            };
+
+            function post(url,data,success,fail,timeout,uploadProgress){
+                request("POST",url,data,success,fail,timeout,uploadProgress);
+            };
+
+            function fadeOut(el) {
+                el.style.opacity = 1;
+                
+                var last = +new Date();
+                var tick = function () {
+                    el.style.opacity = +el.style.opacity - (new Date() - last) / 400;
+                    last = +new Date();
+
+                    if (+el.style.opacity > 0)
+                        (window.requestAnimationFrame && requestAnimationFrame(tick)) || setTimeout(tick, 16);
+                    else
+                        el.style.display = 'none';
+                };
+
+                tick();
+            }
+
+            function triggerEvent(el,evtName){
+                var evt = document.createEvent('Event');
+                evt.initEvent(evtName,true,true);
+                el.dispatchEvent(evt);
+            }
+
+
+            function emptyContents(){
+                $("#menuStatus").classList.remove("pure-menu-selected");
+                $("#menuConfig").classList.remove("pure-menu-selected");
+                $("#menuFirmware").classList.remove("pure-menu-selected");
+                $("#menuDiscover").classList.remove("pure-menu-selected");
+
+                $("#content0").innerHTML = '';
+                $("#contentw").innerHTML = '';
+                $("#content1").innerHTML = '';
+                $("#content2").innerHTML = '';
+                $("#content3").innerHTML = '';
+            };
+
+            $("#menuStatus").addEventListener("click",function(evt){
                 evt.preventDefault();
                 emptyContents();
-                $("#menuConfig").addClass("pure-menu-selected");
-                $("#mainHeader").text("Config");
-                $("#content0").load("/config0.html");
-                $("#contentw").load("/configw.html");
+                $("#menuStatus").classList.add("pure-menu-selected");
+                $("#mainHeader").textContent="Status";
 
-                $("#content1").load("/config1.html");
-                $("#content2").load("/config2.html");
-                $("#content3").load("/config3.html");
+                load($("#content0"),"/status0.html");
+                load($("#contentw"),"/statusw.html");
+
+                load($("#content1"),"/status1.html",function(){
+                    if($("#applicationName")!=null && $("#applicationName").innerText.length !=0){
+                        document.title = "Domochip "+$("#applicationName").innerText;
+                        sessionStorage.setItem("ProductName",$("#applicationName").innerText);
+                    }
+                    if($("#shortApplicationName")!=null && $("#shortApplicationName").innerText.length !=0){
+                        $("meta[name='description']").content = $("#shortApplicationName").innerText;
+                        $("#menuAppName").innerText = $("#shortApplicationName").innerText;
+                    }
+                });
+                load($("#content2"),"/status2.html");
+                load($("#content3"),"/status3.html");
             });
+            triggerEvent($("#menuStatus"),'click');
 
-            $("#menuFirmware").click(function(evt){
+            $("#menuConfig").addEventListener("click",function(evt){
                 evt.preventDefault();
                 emptyContents();
-                $("#menuFirmware").addClass("pure-menu-selected");
-                $("#mainHeader").text("Firmware");
-                $("#content0").load("/fw0.html");
+                $("#menuConfig").classList.add("pure-menu-selected");
+                $("#mainHeader").textContent="Config";
+                load($("#content0"),"/config0.html");
+                load($("#contentw"),"/configw.html");
+                load($("#content1"),"/config1.html");
+                load($("#content2"),"/config2.html");
+                load($("#content3"),"/config3.html");
             });
 
-            $("#menuDiscover").click(function(evt){
+            $("#menuFirmware").addEventListener("click",function(evt){
                 evt.preventDefault();
                 emptyContents();
-                $("#menuDiscover").addClass("pure-menu-selected");
-                $("#mainHeader").text("Discover");
-                $("#content0").load("/discover0.html");
+                $("#menuFirmware").classList.add("pure-menu-selected");
+                $("#mainHeader").textContent="Firmware";
+                load($("#content0"),"/fw0.html");
+            });
+
+            $("#menuDiscover").addEventListener("click",function(evt){
+                evt.preventDefault();
+                emptyContents();
+                $("#menuDiscover").classList.add("pure-menu-selected");
+                $("#mainHeader").textContent="Discover";
+                load($("#content0"),"/discover0.html");
             });
         </script>
     </body>

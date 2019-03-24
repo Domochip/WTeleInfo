@@ -8,7 +8,6 @@
 #include "data\pure-min.css.gz.h"
 #include "data\side-menu.css.gz.h"
 #include "data\side-menu.js.gz.h"
-#include "data\jquery-3.3.1.min.js.gz.h"
 
 void CoreApplication::SetConfigDefaultValues(){};
 void CoreApplication::ParseConfigJSON(DynamicJsonDocument &doc){};
@@ -74,7 +73,7 @@ size_t CoreApplication::GetHTMLContentSize(WebPageForPlaceHolder wp)
 };
 void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
 {
-  //root is status
+  //root is index
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), (const uint8_t *)indexhtmlgz, sizeof(indexhtmlgz));
     response->addHeader("Content-Encoding", "gzip");
@@ -89,6 +88,7 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
     sprintf_P(chipID, PSTR("%08x"), ESP.getChipId());
     AsyncWebServerResponse *response = request->beginResponse(200, "text/html", chipID);
     response->addHeader("Access-Control-Allow-Origin", "*"); //allow this URL to be requested from everywhere
+    response->addHeader("Cache-Control", "no-cache");
     request->send(response);
   });
 
@@ -99,6 +99,7 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
     sprintf_P(discoJSON, PSTR("{\"sn\":\"%08x\",\"m\":\"%s\",\"v\":\"%s\"}"), ESP.getChipId(), APPLICATION1_NAME, BASE_VERSION "/" VERSION);
     AsyncWebServerResponse *response = request->beginResponse(200, "text/json", discoJSON);
     response->addHeader("Access-Control-Allow-Origin", "*"); //allow this URL to be requested from everywhere
+    response->addHeader("Cache-Control", "no-cache");
     request->send(response);
   });
 
@@ -213,13 +214,6 @@ void CoreApplication::AppInitWebServer(AsyncWebServer &server, bool &shouldReboo
 
   server.on("/side-menu.js", HTTP_GET, [](AsyncWebServerRequest *request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/javascript"), (const uint8_t *)sidemenujsgz, sizeof(sidemenujsgz));
-    response->addHeader("Content-Encoding", "gzip");
-    response->addHeader("Cache-Control", "max-age=604800, public");
-    request->send(response);
-  });
-
-  server.on("/jquery-3.3.1.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/javascript"), (const uint8_t *)jquery331minjsgz, sizeof(jquery331minjsgz));
     response->addHeader("Content-Encoding", "gzip");
     response->addHeader("Cache-Control", "max-age=604800, public");
     request->send(response);

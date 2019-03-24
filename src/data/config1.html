@@ -1,6 +1,3 @@
-<div id="applicationName" style="display: none;">WirelessTeleInfo</div>
-<div id="shortApplicationName" style="display: none;">WTeleInfo</div>
-
 <h2 class="content-subhead">TeleInfo<span id="l1"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
 <form class="pure-form pure-form-aligned" id='f1'>
     <fieldset>
@@ -147,88 +144,102 @@
 
 <script>
 
-    $("#hai").click(function(){$("#haidiv").slideToggle(300);});
+    $("#hai").addEventListener('click',function(){
+        $("#haidiv").style.display=($("#haidiv").style.display==''?'none':'');
+    });
 
-    $("#haproto").change(function(){
-        switch($("#haproto").val()){
+    $("#haproto").addEventListener('change',function(){
+        switch($("#haproto").value){
             case "0":
-                $("#hae").hide();
+                $("#hae").style.display='none';
                 break;
             case "1":
-                $("#hae").show();
-                $("#hahe").show();
-                $("#hame").hide();
+                $("#hae").style.display='';
+                $("#hahe").style.display='';
+                $("#hame").style.display='none';
                 break;
             case "2":
-                $("#hae").show();
-                $("#hahe").hide();
-                $("#hame").show();
+                $("#hae").style.display='';
+                $("#hahe").style.display='none';
+                $("#hame").style.display='';
                 break;
         }
     });
 
-    $("#hahtype").change(function(){
-        switch($("#hahtype").val()){
+    $("#hahtype").addEventListener('change',function(){
+        switch($("#hahtype").value){
             case "0":
-                $("#hah0").show();
-                $("#hah1").hide();
+                $("#hah0").style.display='';
+                $("#hah1").style.display='none';
                 break;
             case "1":
-                $("#hah0").hide();
-                $("#hah1").show();
+                $("#hah0").style.display='none';
+                $("#hah1").style.display='';
                 break;
         }
     });
-    $("#hahgupi").click(function(){$("#hahgupidiv").slideToggle(300);});
+    $("#hahgupi").addEventListener('click',function(){
+        $("#hahgupidiv").style.display=($("#hahgupidiv").style.display==''?'none':'');
+        });
 
-    $("#hamtype").change(function(){
-        switch($("#hamtype").val()){
+    $("#hamtype").addEventListener('change',function(){
+        switch($("#hamtype").value){
             case "0":
-                $("#hamgbte").show();
+                $("#hamgbte").style.display='';
                 break;
         }
     });
-    $("#hamtype0i").click(function(){$("#hamtype0div").slideToggle(300);});
-    $("#hamgbti").click(function(){$("#hamgbtidiv").slideToggle(300);});
+    $("#hamtype0i").addEventListener('click',function(){
+        $("#hamtype0div").style.display=($("#hamtype0div").style.display==''?'none':'');
+        });
+    $("#hamgbti").addEventListener('click',function(){
+        $("#hamgbtidiv").style.display=($("#hamgbtidiv").style.display==''?'none':'');
+        });
 
-    $("#hatls").change(function(){
-        if($("#hatls").prop("checked")){
-            $("#hahtlse").show();
-            $("#hamport").val(8883);
+    $("#hatls").addEventListener('change',function(){
+        if($("#hatls").checked){
+            $("#hahtlse").style.display='';
+            $("#hamport").value=8883;
         }
         else{
-            $("#hahtlse").hide();
-            $("#hamport").val(1883);
+            $("#hahtlse").style.display='none';
+            $("#hamport").value=1883;
         }
     });
 
-    $("#f1").submit(function(event){
-        $("#r1").html("Saving Configuration...");
-        $.post("/sc1",$("#f1").serialize(),function(){ 
-            $("#f1").hide();
-            var reload5sec=document.createElement('script');
-            reload5sec.text='var count=4;var cdi=setInterval(function(){$("#cd").text(count);if(!count){clearInterval(cdi);location.reload();}count--;},1000);';
-            $('#r1').html('<h3><b>Configuration saved <span style="color: green;">successfully</span>. System is restarting now.</b></h3>This page will be reloaded in <span id="cd">5</span>sec.').append(reload5sec);
-        }).fail(function(){
-            $('#r1').html('<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>');
-        });
+    $("#f1").addEventListener('submit',function(event){
+        $("#r1").innerHTML="Saving Configuration...";
+        post("/sc1",
+            new FormData($("#f1")),
+            function(){ 
+                $("#f1").style.display='none';
+
+                $('#r1').innerHTML='<h3><b>Configuration saved <span style="color: green;">successfully</span>.</b></h3>This page will be reloaded in <span id="cd">5</span>sec.';
+                runScript('var count=4;var cdi=setInterval(function(){$("#cd").innerText=count;if(!count){clearInterval(cdi);location.reload();}count--;},1000);');
+            },
+            function(){
+                $('#r1').innerHTML='<h3><b>Configuration <span style="color: red;">error</span>.</b></h3>';
+            }
+        );
         event.preventDefault();
     });
 
-    $.getJSON("/gc1", function(GC1){
+    getJSON("/gc1",
+        function(GC1){
+            for(k in GC1){
+                if($('#'+k)){
+                    if($('#'+k).type!='checkbox') $('#'+k).value=GC1[k];
+                    else $('#'+k).checked=GC1[k];
 
-        $.each(GC1,function(k,v){
+                    triggerEvent($('#'+k),'change');
+                }
+            }
 
-            if($('#'+k).prop('type')!='checkbox') $('#'+k).val(v);
-            else $('#'+k).prop("checked",v);
-
-            $('#'+k).trigger("change");
-        });
-
-        $("input[type=submit]",$("#f1")).prop("disabled",false);
-        $("#l1").fadeOut();
-    })
-    .fail(function(){
-    $("#l1").html('<h6 style="display:inline;color:red;"><b> Failed</b></h6>');
-    });
+            $("#f1 input[type=submit]").disabled=false;
+            fadeOut($("#l1"));
+        },
+        function(){
+            $("#l1").innerHTML='<h6 style="display:inline;color:red;"><b> Failed</b></h6>';
+        }
+    );
 </script>

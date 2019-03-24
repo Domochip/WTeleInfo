@@ -9,14 +9,15 @@ Connected ADCO : <span id="a"></span><br>
 </dl>
 
 <script>
-    $.getJSON("/gs1", function(GS1){
-
-        $.each(GS1,function(k,v){
-            $('#'+k).html(v);
-        })
-        $("#l3").fadeOut();
-    })
-    .fail(function(){
-        $("#l3").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
-    });
+    getJSON("/gs1",
+        function(GS1){
+            for(k in GS1){
+                if((e = $('#' + k)) != undefined) e.innerHTML = GS1[k];
+            }
+            fadeOut($("#l3"));
+        },
+        function(){
+            $("#l3").innerHTML='<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
+        }
+    );
 </script>

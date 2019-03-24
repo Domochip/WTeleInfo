@@ -4,14 +4,15 @@ AP : <span id="ap"></span> (<span id="ai"></span>)<br>
 Station : <span id="sta"></span> (<span id="stai"></span>)<br>
 
 <script>
-    $.getJSON("/gsw", function(GSW){
-
-        $.each(GSW,function(k,v){
-            $('#'+k).html(v);
-        })
-        $("#lw").fadeOut();
-    })
-    .fail(function(){
-        $("#lw").html('<h4 style="display:inline;color:red;"><b> Failed</b></h4>');
-    });
+    getJSON("/gsw",
+        function(GSW){
+            for(k in GSW){
+                if((e = $('#' + k)) != undefined) e.innerHTML = GSW[k];
+            }
+            fadeOut($("#lw"));
+        },
+        function(){
+            $("#lw").innerHTML='<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
+        }
+    );
 </script>
