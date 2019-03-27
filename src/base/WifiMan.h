@@ -3,6 +3,8 @@
 
 #include "..\Main.h" //for DEFAULT_AP_SSID and ...PSK
 
+#include <Ticker.h>
+
 #include "data\statusw.html.gz.h"
 #include "data\configw.html.gz.h"
 
@@ -26,8 +28,10 @@ private:
   WiFiEventHandler _wifiHandler1, _wifiHandler2;
   int _apChannel = 2;
   char _apSsid[64];
+  Ticker _retryTicker;
   uint16_t _retryPeriod = 300;
-  bool _retryStation = false;
+
+  void RetryTick();
 
   void SetConfigDefaultValues();
   void ParseConfigJSON(DynamicJsonDocument &doc);

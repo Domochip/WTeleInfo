@@ -1,5 +1,35 @@
 #include "WifiMan.h"
 
+void WifiMan::RetryTick()
+{
+  Serial.print(F("Try WiFiReco"));
+  //WiFi.begin(config.ssid, config.password); //ssid and password still stored because no WiFi.disconnect called
+  WiFi.begin();
+  WiFi.config(ip, gw, mask, dns1, dns2);
+
+  //Wait 10sec for connection
+  for (int i = 0; i < 100 && !WiFi.isConnected(); i++)
+  {
+    if ((i % 10) == 0)
+      Serial.print(".");
+    delay(100);
+  }
+
+  //if not connected
+  if (!WiFi.isConnected())
+  {
+    Serial.println(F("Failed"));
+    //disable station mode
+    WiFi.mode(WIFI_AP);
+  }
+  // disable retry and AP mode is disabled by wifiHandler(2)
+  else
+  {
+    Serial.println();
+    _retryTicker.detach();
+  }
+}
+
 void WifiMan::SetConfigDefaultValues()
 {
   ssid[0] = 0;
@@ -189,6 +219,10 @@ bool WifiMan::AppInit(bool reInit = false)
     _apSsid[endOfSsid + 3] = num + ((num <= 9) ? 0x30 : 0x37);
     _apSsid[endOfSsid + 4] = 0;
   }
+
+  //Stop retryTicker before WiFi operations
+  _retryTicker.detach();
+
   // WiFi.scanNetworks will return the number of networks found
   int n = WiFi.scanNetworks();
   Serial.print(n);
@@ -256,7 +290,7 @@ bool WifiMan::AppInit(bool reInit = false)
       Serial.print(F("Enabling AP ("));
       Serial.print(WiFi.softAPIP());
       Serial.print(')');
-      _retryStation = true;
+      _retryTicker.attach_scheduled(_retryPeriod, std::bind(&WifiMan::RetryTick, this));
 #ifdef STATUS_LED_WARNING
       STATUS_LED_WARNING
 #endif
@@ -274,7 +308,7 @@ bool WifiMan::AppInit(bool reInit = false)
           Serial.print(F("WiFiDisco : Enabling AP ("));
           Serial.print(WiFi.softAPIP());
           Serial.println(')');
-          _retryStation = true;
+          _retryTicker.attach_scheduled(_retryPeriod, std::bind(&WifiMan::RetryTick, this));
         }
 #ifdef STATUS_LED_WARNING
         STATUS_LED_WARNING
@@ -295,7 +329,7 @@ bool WifiMan::AppInit(bool reInit = false)
   }
   else
   {
-    _retryStation = false;
+    _retryTicker.detach();
     WiFi.disconnect();
     //Enable AP
     WiFi.mode(WIFI_AP);
@@ -385,36 +419,4 @@ void WifiMan::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool 
   });
 }
 
-void WifiMan::AppRun()
-{
-
-  if (_retryStation && (millis() / (_retryPeriod * 100) % 10 == 0))
-  {
-    Serial.print(F("Try WiFiReco"));
-    //WiFi.begin(config.ssid, config.password); //ssid and password still stored because no WiFi.disconnect called
-    WiFi.begin();
-    WiFi.config(ip, gw, mask, dns1, dns2);
-
-    //Wait 10sec for connection
-    for (int i = 0; i < 100 && !WiFi.isConnected(); i++)
-    {
-      if ((i % 10) == 0)
-        Serial.print(".");
-      delay(100);
-    }
-
-    //if not connected
-    if (!WiFi.isConnected())
-    {
-      Serial.println(F("Failed"));
-      //disable station mode
-      WiFi.mode(WIFI_AP);
-    }
-    // disable retry and AP mode is disabled by wifiHandler(2)
-    else
-    {
-      Serial.println();
-      _retryStation = false;
-    }
-  }
-};
+void WifiMan::AppRun(){};
