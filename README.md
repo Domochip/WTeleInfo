@@ -25,6 +25,12 @@ Tous les fichiers necessaires sont dans le sous-dossier schematic et ont été c
 ### Code/Compile
 Pour compiler ce sketch, vous devez utiliser PlatformIO
 
+### Imprimez votre boitier
+
+Le projet du boitier (Fusion 360) se trouve dans le dossier `box` 
+
+![WirelessTeleInfo Box](https://raw.github.com/Domochip/WirelessTeleInfo/master/img/box.jpg)
+
 
 ## Démarrage
 
