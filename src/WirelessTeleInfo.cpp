@@ -580,13 +580,10 @@ String WebTeleInfo::GenerateStatusJSON()
 //code to execute during initialization and reinitialization of the app
 bool WebTeleInfo::AppInit(bool reInit = false)
 {
-  //clean
-  if (_swSerial)
-    delete _swSerial;
-  //create SoftwareSerial port
-  _swSerial = new SoftwareSerial(TELEINFO_PIN, TELEINFO_PIN, false, 256);
+  //Switch to Serial2
+  Serial.swap();
   //then start
-  _swSerial->begin(1200);
+  Serial.begin(1200);
 
   //Clean up MQTT variables
   if (_pubSubClient)
@@ -641,10 +638,10 @@ bool WebTeleInfo::AppInit(bool reInit = false)
     char c = 0;
     while (c != 0x03)
     {
-      if (!_swSerial->available())
+      if (!Serial.available())
         delay(100);
-      if (_swSerial->available())
-        c = _swSerial->read() & 0x7f;
+      if (Serial.available())
+        c = Serial.read() & 0x7f;
       else
         break;
     }
@@ -725,8 +722,8 @@ void WebTeleInfo::AppRun()
 {
   if (_pubSubClient)
     _pubSubClient->loop();
-  if (_swSerial->available())
-    _tinfo.process(_swSerial->read() & 0x7f);
+  if (Serial.available())
+    _tinfo.process(Serial.read() & 0x7f);
   if (_haTimer.getNumTimers())
     _haTimer.run();
 }
