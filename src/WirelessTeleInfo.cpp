@@ -580,18 +580,14 @@ String WebTeleInfo::GenerateStatusJSON()
 //code to execute during initialization and reinitialization of the app
 bool WebTeleInfo::AppInit(bool reInit = false)
 {
-  //Switch to Serial2
-  Serial.swap();
-  //then start
-  Serial.begin(1200);
-
-  //Clean up MQTT variables
-  if (_pubSubClient)
+  if (!reInit)
   {
-    if (_pubSubClient->connected())
-      _pubSubClient->disconnect();
-    delete _pubSubClient;
-    _pubSubClient = NULL;
+    Serial.flush();
+    Serial.end();
+    //Start @ 1200
+    Serial.begin(1200);
+    //then switch to Serial2
+    Serial.swap();
   }
   if (_wifiClient)
   {
