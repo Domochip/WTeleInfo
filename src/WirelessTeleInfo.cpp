@@ -492,12 +492,55 @@ String WebTeleInfo::GenerateStatusJSON()
   String gs('{');
 
   gs = gs + F("\"a\":\"") + _ADCO + '"';
-  if (_ha.protocol != HA_PROTO_DISABLED)
+  gs = gs + F(",\"has1\":\"");
+  switch (_ha.protocol)
   {
-    gs = gs + F(",\"lrr\":") + _haSendResult;
-  }
+  case HA_PROTO_DISABLED:
+    gs = gs + F("Disabled");
+    break;
+  case HA_PROTO_HTTP:
+    gs = gs + F("Last HTTP request result : ") + (_haSendResult ? F("OK") : F("Failed"));
+    break;
+  case HA_PROTO_MQTT:
+    gs = gs + F("MQTT Connection State : ");
+    switch (_mqttClient.state())
+    {
+    case MQTT_CONNECTION_TIMEOUT:
+      gs = gs + F("Timed Out");
+      break;
+    case MQTT_CONNECTION_LOST:
+      gs = gs + F("Lost");
+      break;
+    case MQTT_CONNECT_FAILED:
+      gs = gs + F("Failed");
+      break;
+    case MQTT_CONNECTED:
+      gs = gs + F("Connected");
+      break;
+    case MQTT_CONNECT_BAD_PROTOCOL:
+      gs = gs + F("Bad Protocol Version");
+      break;
+    case MQTT_CONNECT_BAD_CLIENT_ID:
+      gs = gs + F("Incorrect ClientID ");
+      break;
+    case MQTT_CONNECT_UNAVAILABLE:
+      gs = gs + F("Server Unavailable");
+      break;
+    case MQTT_CONNECT_BAD_CREDENTIALS:
+      gs = gs + F("Bad Credentials");
+      break;
+    case MQTT_CONNECT_UNAUTHORIZED:
+      gs = gs + F("Connection Unauthorized");
+      break;
+    }
 
-  gs = gs + '}';
+    if (_mqttClient.state() == MQTT_CONNECTED)
+      gs = gs + F("\",\"has2\":\"Last Publish Result : ") + (_haSendResult ? F("OK") : F("Failed"));
+
+    break;
+  }
+  gs += '"';
+  gs += '}';
 
   return gs;
 }
