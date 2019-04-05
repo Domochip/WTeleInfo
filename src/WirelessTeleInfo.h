@@ -7,7 +7,7 @@
 
 #include "Main.h"
 #include "base\Utils.h"
-#include "base\Base.h"
+#include "base\Application.h"
 
 const char appDataPredefPassword[] PROGMEM = "ewcXoCt4HHjZUvY1";
 
@@ -16,7 +16,7 @@ const char appDataPredefPassword[] PROGMEM = "ewcXoCt4HHjZUvY1";
 
 #include <ESP8266HTTPClient.h>
 #include <PubSubClient.h>
-#include "SimpleTimer.h"
+#include <Ticker.h>
 #include "LibTeleInfo.h"
 
 #define TELEINFO_PIN D5
@@ -77,15 +77,20 @@ private:
   char _ADCO[13] = {0};
 
   TInfo _tinfo;
-  SimpleTimer _haTimer;
-  WiFiClient *_wifiClient = NULL;
-  WiFiClientSecure *_wifiClientSecure = NULL;
-  PubSubClient *_pubSubClient = NULL;
+  bool _needPublish = false;
+  Ticker _publishTicker;
+  WiFiClient _wifiMqttClient;
+  WiFiClientSecure _wifiMqttClientSecure;
+  PubSubClient _mqttClient;
+  bool _needMqttReconnect = false;
+  Ticker _mqttReconnectTicker;
 
   void tinfoUpdatedFrame(ValueList *me);
   String GetLabel(const String &labelName);
   String GetAllLabel();
-  void UploadTick();
+  bool MqttConnect();
+  void OnMqttDisconnect();
+  void PublishTick(bool publishAll);
 
   void SetConfigDefaultValues();
   void ParseConfigJSON(DynamicJsonDocument &doc);

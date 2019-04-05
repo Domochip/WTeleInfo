@@ -25,13 +25,19 @@ private:
   uint32_t dns2 = 0;
 
   //Run properties
-  WiFiEventHandler _wifiHandler1, _wifiHandler2;
+  WiFiEventHandler _discoEventHandler;
+  WiFiEventHandler _staConnectedHandler;
+  WiFiEventHandler _staDisconnectedHandler;
   int _apChannel = 2;
   char _apSsid[64];
-  Ticker _retryTicker;
-  uint16_t _retryPeriod = 300;
+  bool _needRefreshWifi = false;
+  bool _stationConnectedToSoftAP = false;
+  Ticker _refreshTicker;
+  uint8_t _refreshPeriod = 60; //try to reconnect as station mode every 60 seconds
+  uint8_t _reconnectDuration = 20; //duration to try to connect to Wifi in seconds
 
-  void RetryTick();
+  void EnableAP(bool force);
+  void RefreshWiFi();
 
   void SetConfigDefaultValues();
   void ParseConfigJSON(DynamicJsonDocument &doc);
@@ -39,7 +45,7 @@ private:
   String GenerateConfigJSON(bool forSaveFile);
   String GenerateStatusJSON();
   bool AppInit(bool reInit);
-  const uint8_t* GetHTMLContent(WebPageForPlaceHolder wp);
+  const uint8_t *GetHTMLContent(WebPageForPlaceHolder wp);
   size_t GetHTMLContentSize(WebPageForPlaceHolder wp);
   void AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication);
   void AppRun();

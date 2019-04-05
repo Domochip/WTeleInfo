@@ -20,7 +20,7 @@
 #define APPLICATION1_DESC "DomoChip Wireless TeleInfo"
 #define APPLICATION1_CLASS WebTeleInfo
 
-#define VERSION_NUMBER "3.2.5"
+#define VERSION_NUMBER "3.3.0"
 
 #define DEFAULT_AP_SSID "WirelessTeleInfo"
 #define DEFAULT_AP_PSK "PasswordTeleInfo"
@@ -29,7 +29,7 @@
 #define DEVELOPPER_MODE 0
 
 //Choose Serial Speed
-#define SERIAL_SPEED 115200
+#define SERIAL_SPEED 1200
 
 //Choose Pin used to boot in Rescue Mode
 //#define RESCUE_BTN_PIN 2

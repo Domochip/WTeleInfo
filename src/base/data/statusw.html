@@ -9,6 +9,12 @@ Station : <span id="sta"></span> (<span id="stai"></span>)<br>
             for(k in GSW){
                 if((e = $('#' + k)) != undefined) e.innerHTML = GSW[k];
             }
+
+            if(GSW["sta"]=="on" && location.hostname == "192.168.4.1"){
+                var containerDiv = document.createElement('div');
+                containerDiv.innerHTML="<div id='connectedToAP' class='pure-button pure-button-disabled' style='width:100%;position:fixed;top:0;color: white;text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);background: rgb(202, 60, 60);opacity:1;white-space:normal;'>!!! Disconnect from this Wifi network to allow reconnection or modify WiFi configuration !!!</div>";
+                $("#main").appendChild(containerDiv.firstChild)
+            }
             fadeOut($("#lw"));
         },
         function(){

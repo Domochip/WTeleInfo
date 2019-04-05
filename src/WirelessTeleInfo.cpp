@@ -3,32 +3,17 @@
 //Please, have a look at Main.h for information and configuration of Arduino project
 
 //------------------------------------------
-// TeleInfo CallBack function (when value change occured)
-void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
+// Execute code to upload Infos
+void WebTeleInfo::PublishTick(bool publishAll = true)
 {
-
-  //if pointer is null
-  if (!me)
-    return;
-
-  if (!_ADCO[0])
-  {
-    //Find ADCO
-    ValueList *adcoLookup = me;
-    while (adcoLookup->next)
-    {
-      adcoLookup = adcoLookup->next;
-      if (!strcmp_P(adcoLookup->name, PSTR("ADCO")))
-        strcpy(_ADCO, adcoLookup->value);
-    }
-  }
-
   //if Home Automation upload not enabled then return
   if (_ha.protocol == HA_PROTO_DISABLED)
     return;
 
-  //if Upload period is not 0 then we don't send values in real time
-  if (_ha.uploadPeriod != 0)
+  //Get Labels list
+  ValueList *me = _tinfo.getList();
+
+  if (!me)
     return;
 
   //----- HTTP Protocol configured -----
@@ -61,8 +46,8 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
       while (me->next && _haSendResult)
       {
         me = me->next;
-        // Add only new or updated values (And name is not ADCO (it will be added))
-        if ((me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED)) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("MOTDETAT")) != 0)
+        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO (it will be added))
+        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("MOTDETAT")) != 0)
         {
 
           String sendURI = completeURI;
@@ -73,18 +58,16 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
           if (sendURI.indexOf(F("$val$")) != -1)
             sendURI.replace(F("$val$"), me->value);
 
-          //create HTTP request
+          //create HTTP request objects
+          WiFiClient client;
+          WiFiClientSecure clientSecure;
           HTTPClient http;
 
           //if tls is enabled or not, we need to provide certificate fingerPrint
           if (!_ha.tls)
-          {
-            WiFiClient client;
             http.begin(client, sendURI);
-          }
           else
           {
-            WiFiClientSecure clientSecure;
             char fpStr[41];
             clientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
             http.begin(clientSecure, sendURI);
@@ -110,11 +93,9 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
       while (me->next)
       {
         me = me->next;
-        // Add only new or updated values (And name is not ADCO (it will be added))
-        if ((me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED)) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("MOTDETAT")) != 0)
-        {
+        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO (it will be added))
+        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("MOTDETAT")) != 0)
           _httpJeedomRequest += String("&") + me->name + '=' + me->value;
-        }
       }
       //do we need to send data
       if (_httpJeedomRequest == "")
@@ -135,18 +116,16 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
       if (completeURI.indexOf(F("$adco$")) != -1)
         completeURI.replace(F("$adco$"), _ADCO);
 
-      //create HTTP request
+      //create HTTP request objects
+      WiFiClient client;
+      WiFiClientSecure clientSecure;
       HTTPClient http;
 
       //if tls is enabled or not, we need to provide certificate fingerPrint
       if (!_ha.tls)
-      {
-        WiFiClient client;
         http.begin(client, completeURI);
-      }
       else
       {
-        WiFiClientSecure clientSecure;
         char fpStr[41];
         clientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
         http.begin(clientSecure, completeURI);
@@ -162,37 +141,8 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
   //----- MQTT Protocol configured -----
   if (_ha.protocol == HA_PROTO_MQTT)
   {
-    //sn can be used in multiple cases
-    char sn[9];
-    sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
-
-    //if not connected to MQTT
-    if (!_pubSubClient->connected())
-    {
-      //generate clientID
-      String clientID(F(APPLICATION1_NAME));
-      clientID += sn;
-      //and try to connect
-      if (!_ha.mqtt.username[0])
-        _pubSubClient->connect(clientID.c_str());
-      else
-      {
-        if (!_ha.mqtt.password[0])
-          _pubSubClient->connect(clientID.c_str(), _ha.mqtt.username, NULL);
-        else
-          _pubSubClient->connect(clientID.c_str(), _ha.mqtt.username, _ha.mqtt.password);
-      }
-    }
-
-    //if still not connected
-    if (!_pubSubClient->connected())
-    {
-      //return error code minus 10 (result should be negative)
-      _haSendResult = _pubSubClient->state();
-      _haSendResult -= 10;
-    }
-    // else we are connected
-    else
+    //if we are connected
+    if (_mqttClient.connected())
     {
       //prepare topic
       String completeTopic, thisLabelTopic;
@@ -209,7 +159,11 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 
       //Replace placeholders
       if (completeTopic.indexOf(F("$sn$")) != -1)
+      {
+        char sn[9];
+        sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
         completeTopic.replace(F("$sn$"), sn);
+      }
 
       if (completeTopic.indexOf(F("$mac$")) != -1)
         completeTopic.replace(F("$mac$"), WiFi.macAddress());
@@ -222,14 +176,14 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 
       _haSendResult = true;
 
-      //go through labels to look for new Value
+      //go through labels to look for values
       while (me->next && _haSendResult)
       {
         me = me->next;
-        // Add only new or updated values
-        if (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))
-        {
 
+        //publish All labels (publishAll passed) Or new/updated ones only
+        if (publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED)))
+        {
           //copy completeTopic in order to "complete" it ...
           thisLabelTopic = completeTopic;
 
@@ -237,11 +191,44 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
           thisLabelTopic += me->name;
 
           //send
-          _haSendResult = _pubSubClient->publish(thisLabelTopic.c_str(), me->value);
+          _haSendResult = _mqttClient.publish(thisLabelTopic.c_str(), me->value);
         }
       }
     }
   }
+}
+
+//------------------------------------------
+// TeleInfo CallBack function (when value change occured)
+void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
+{
+  //if pointer is null
+  if (!me)
+    return;
+
+  if (!_ADCO[0])
+  {
+    //Find ADCO
+    ValueList *adcoLookup = me;
+    while (adcoLookup->next)
+    {
+      adcoLookup = adcoLookup->next;
+      if (!strcmp_P(adcoLookup->name, PSTR("ADCO")))
+        strcpy(_ADCO, adcoLookup->value);
+    }
+    if (_ADCO[0])
+    {
+      Serial.print(F("ADCO : "));
+      Serial.println(_ADCO);
+    }
+  }
+
+  //if Upload period is not 0 then we don't send values in real time
+  if (_ha.uploadPeriod != 0)
+    return;
+
+  //Publish but not all labels for real time
+  PublishTick(false);
 
   //LOG
   Serial.println(F("Sent"));
@@ -285,94 +272,32 @@ String WebTeleInfo::GetAllLabel()
 }
 
 //------------------------------------------
-// Execute code to upload temperature to MQTT if enable
-void WebTeleInfo::UploadTick()
+// subscribe to MQTT topic after connection
+bool WebTeleInfo::MqttConnect()
 {
-  //if Home Automation upload not enabled then return
-  if (_ha.protocol == HA_PROTO_DISABLED)
-    return;
 
-  //----- MQTT Protocol configured -----
-  if (_ha.protocol == HA_PROTO_MQTT)
+  if (!WiFi.isConnected())
+    return false;
+
+  char sn[9];
+  sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
+
+  //generate clientID
+  String clientID(F(APPLICATION1_NAME));
+  clientID += sn;
+
+  //Connect
+  if (!_ha.mqtt.username[0])
+    _mqttClient.connect(clientID.c_str());
+  else
+    _mqttClient.connect(clientID.c_str(), _ha.mqtt.username, _ha.mqtt.password);
+
+  if (_mqttClient.connected())
   {
-    //sn can be used in multiple cases
-    char sn[9];
-    sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
-
-    //if not connected to MQTT
-    if (!_pubSubClient->connected())
-    {
-      //generate clientID
-      String clientID(F(APPLICATION1_NAME));
-      clientID += sn;
-      //and try to connect
-      if (!_ha.mqtt.username[0])
-        _pubSubClient->connect(clientID.c_str());
-      else
-      {
-        if (!_ha.mqtt.password[0])
-          _pubSubClient->connect(clientID.c_str(), _ha.mqtt.username, NULL);
-        else
-          _pubSubClient->connect(clientID.c_str(), _ha.mqtt.username, _ha.mqtt.password);
-      }
-    }
-
-    //if still not connected
-    if (!_pubSubClient->connected())
-    {
-      //return error code minus 10 (result should be negative)
-      _haSendResult = _pubSubClient->state();
-      _haSendResult -= 10;
-    }
-    // else we are connected
-    else
-    {
-      //prepare topic
-      String completeTopic, thisLabelTopic;
-      switch (_ha.mqtt.type)
-      {
-      case HA_MQTT_GENERIC:
-        completeTopic = _ha.mqtt.generic.baseTopic;
-
-        //check for final slash
-        if (completeTopic.length() && completeTopic.charAt(completeTopic.length() - 1) != '/')
-          completeTopic += '/';
-        break;
-      }
-
-      //Replace placeholders
-      if (completeTopic.indexOf(F("$sn$")) != -1)
-        completeTopic.replace(F("$sn$"), sn);
-
-      if (completeTopic.indexOf(F("$mac$")) != -1)
-        completeTopic.replace(F("$mac$"), WiFi.macAddress());
-
-      if (completeTopic.indexOf(F("$model$")) != -1)
-        completeTopic.replace(F("$model$"), APPLICATION1_NAME);
-
-      if (completeTopic.indexOf(F("$adco$")) != -1)
-        completeTopic.replace(F("$adco$"), _ADCO);
-
-      _haSendResult = true;
-
-      //get Labels list
-      ValueList *me = _tinfo.getList();
-      //go through labels to look for new Value
-      while (me->next && _haSendResult)
-      {
-        me = me->next;
-
-        //copy completeTopic in order to "complete" it ...
-        thisLabelTopic = completeTopic;
-
-        //add the label name
-        thisLabelTopic += me->name;
-
-        //send
-        _haSendResult = _pubSubClient->publish(thisLabelTopic.c_str(), me->value);
-      }
-    }
+    //Subscribe to needed topic
   }
+
+  return _mqttClient.connected();
 }
 
 //------------------------------------------
@@ -589,47 +514,47 @@ bool WebTeleInfo::AppInit(bool reInit = false)
     //then switch to Serial2
     Serial.swap();
   }
-  if (_wifiClient)
-  {
-    delete _wifiClient;
-    _wifiClient = NULL;
-  }
-  if (_wifiClientSecure)
-  {
-    delete _wifiClientSecure;
-    _wifiClientSecure = NULL;
-  }
+
+  //Stop Publish
+  _publishTicker.detach();
+
+  //Stop MQTT
+  if (_mqttClient.connected()) //Issue #598 : disconnect() crash if client not yet set
+    _mqttClient.disconnect();
+  _mqttReconnectTicker.detach();
 
   //if MQTT used so build MQTT variables
   if (_ha.protocol == HA_PROTO_MQTT)
   {
+    //setup server
+    _mqttClient.setServer(_ha.hostname, _ha.mqtt.port);
 
+    //setup client used
     if (!_ha.tls)
     {
-      _wifiClient = new WiFiClient();
-      _pubSubClient = new PubSubClient(_ha.hostname, _ha.mqtt.port, *_wifiClient);
+      _wifiMqttClient.setTimeout(1000); //set TCP timeout to 1sec
+      _mqttClient.setClient(_wifiMqttClient);
     }
     else
     {
-      _wifiClientSecure = new WiFiClientSecure();
-      _pubSubClient = new PubSubClient(_ha.hostname, _ha.mqtt.port, *_wifiClientSecure);
+      _wifiMqttClientSecure.setTimeout(1000); //set TCP timeout to 1sec
+      //_wifiMqttClientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, ha.fingerPrint));
+      _mqttClient.setClient(_wifiMqttClientSecure);
     }
+
+    //Connect
+    MqttConnect();
   }
 
-  //cleanup timer for home Automation
-  if (_haTimer.getNumTimers())
-    _haTimer.deleteTimer(0);
-
-  //if HA and upload period != 0, then start timer
+  //if HA and upload period != 0, then start ticker
   if (_ha.protocol != HA_PROTO_DISABLED && _ha.uploadPeriod != 0)
   {
-    this->UploadTick();
-    _haTimer.setInterval(1000L * _ha.uploadPeriod, [this]() { this->UploadTick(); });
+    PublishTick(); //if configuration changed, publish immediately
+    _publishTicker.attach(_ha.uploadPeriod, [this]() { this->_needPublish = true; });
   }
 
   if (!reInit)
   {
-
     //try to consume Serial Data until end of TeleInfo frame
     char c = 0;
     while (c != 0x03)
@@ -716,12 +641,30 @@ void WebTeleInfo::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, b
 //Run for timer
 void WebTeleInfo::AppRun()
 {
-  if (_pubSubClient)
-    _pubSubClient->loop();
+  if (_needMqttReconnect)
+  {
+    _needMqttReconnect = false;
+    MqttConnect();
+  }
+
+  //if MQTT required but not connected and reconnect ticker not started
+  if (_ha.protocol == HA_PROTO_MQTT && !_mqttClient.connected() && !_mqttReconnectTicker.active())
+  {
+    //log reason into haSendResult
+    _haSendResult = _mqttClient.state() - 10;
+    //set Ticker to reconnect after 10 or 60 sec (Wifi connected or not)
+    _mqttReconnectTicker.once_scheduled((WiFi.isConnected() ? 10 : 60), [this]() { _needMqttReconnect = true; });
+  }
+
+  if (_ha.protocol == HA_PROTO_MQTT)
+    _mqttClient.loop();
   if (Serial.available())
     _tinfo.process(Serial.read() & 0x7f);
-  if (_haTimer.getNumTimers())
-    _haTimer.run();
+  if (_needPublish)
+  {
+    _needPublish = false;
+    PublishTick();
+  }
 }
 
 //------------------------------------------

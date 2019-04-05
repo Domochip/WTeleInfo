@@ -5,13 +5,13 @@
 #include <ESPAsyncWebServer.h>
 
 #include "Version.h"
+#include "Application.h"
 #include "Core.h"
 #include "WifiMan.h"
-#include "Base.h"
 #include "..\Main.h"
 
 //System
-CoreApplication coreApplication('0', "Core");
+Core core('0', "Core");
 
 //WifiMan
 WifiMan wifiMan('w', "WiFi");
@@ -99,7 +99,7 @@ void setup()
   }
 
   //Init Core
-  coreApplication.Init(skipExistingConfig);
+  core.Init(skipExistingConfig);
 
   //Init WiFi
   wifiMan.Init(skipExistingConfig);
@@ -117,7 +117,7 @@ void setup()
 
   Serial.print(F("Start WebServer : "));
 
-  coreApplication.InitWebServer(server, shouldReboot, pauseApplication);
+  core.InitWebServer(server, shouldReboot, pauseApplication);
   wifiMan.InitWebServer(server, shouldReboot, pauseApplication);
 #ifdef APPLICATION1_CLASS
   application1.InitWebServer(server, shouldReboot, pauseApplication);

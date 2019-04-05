@@ -1,5 +1,5 @@
-#ifndef Base_h
-#define Base_h
+#ifndef Application_h
+#define Application_h
 
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
