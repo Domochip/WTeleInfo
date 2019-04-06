@@ -89,7 +89,6 @@ private:
   String GetLabel(const String &labelName);
   String GetAllLabel();
   bool MqttConnect();
-  void OnMqttDisconnect();
   void PublishTick(bool publishAll);
 
   void SetConfigDefaultValues();

@@ -561,12 +561,12 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   //Stop Publish
   _publishTicker.detach();
 
-  //Stop MQTT
+  //Stop MQTT Reconnect
+  _mqttReconnectTicker.detach();
   if (_mqttClient.connected()) //Issue #598 : disconnect() crash if client not yet set
     _mqttClient.disconnect();
-  _mqttReconnectTicker.detach();
 
-  //if MQTT used so build MQTT variables
+  //if MQTT used so configure it
   if (_ha.protocol == HA_PROTO_MQTT)
   {
     //setup server
@@ -687,14 +687,17 @@ void WebTeleInfo::AppRun()
   if (_needMqttReconnect)
   {
     _needMqttReconnect = false;
-    MqttConnect();
+    Serial.print(F("MQTT Reconnection : "));
+    if (MqttConnect())
+      Serial.println(F("OK"));
+    else
+      Serial.println(F("Failed"));
   }
 
   //if MQTT required but not connected and reconnect ticker not started
   if (_ha.protocol == HA_PROTO_MQTT && !_mqttClient.connected() && !_mqttReconnectTicker.active())
   {
-    //log reason into haSendResult
-    _haSendResult = _mqttClient.state() - 10;
+    Serial.println(F("MQTT Disconnected"));
     //set Ticker to reconnect after 10 or 60 sec (Wifi connected or not)
     _mqttReconnectTicker.once_scheduled((WiFi.isConnected() ? 10 : 60), [this]() { _needMqttReconnect = true; });
   }
@@ -706,6 +709,7 @@ void WebTeleInfo::AppRun()
   if (_needPublish)
   {
     _needPublish = false;
+    Serial.println(F("PublishTick"));
     PublishTick();
   }
 }
