@@ -575,12 +575,10 @@ bool WebTeleInfo::AppInit(bool reInit = false)
     //setup client used
     if (!_ha.tls)
     {
-      _wifiMqttClient.setTimeout(1000); //set TCP timeout to 1sec
       _mqttClient.setClient(_wifiMqttClient);
     }
     else
     {
-      _wifiMqttClientSecure.setTimeout(1000); //set TCP timeout to 1sec
       //_wifiMqttClientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, ha.fingerPrint));
       _mqttClient.setClient(_wifiMqttClientSecure);
     }
@@ -695,11 +693,11 @@ void WebTeleInfo::AppRun()
   }
 
   //if MQTT required but not connected and reconnect ticker not started
-  if (_ha.protocol == HA_PROTO_MQTT && !_mqttClient.connected() && !_mqttReconnectTicker.active())
+  if (_ha.protocol == HA_PROTO_MQTT && (!_mqttClient.connected() || _mqttClient.state()!=MQTT_CONNECTED) && !_mqttReconnectTicker.active()) //Added state control because esp8266 2.5.0 WiFiClient.close don't seems to disconnect
   {
     Serial.println(F("MQTT Disconnected"));
-    //set Ticker to reconnect after 10 or 60 sec (Wifi connected or not)
-    _mqttReconnectTicker.once_scheduled((WiFi.isConnected() ? 10 : 60), [this]() { _needMqttReconnect = true; });
+    //set Ticker to reconnect after 20 or 60 sec (Wifi connected or not)
+    _mqttReconnectTicker.once_scheduled((WiFi.isConnected() ? 20 : 60), [this]() { _needMqttReconnect = true; });
   }
 
   if (_ha.protocol == HA_PROTO_MQTT)
