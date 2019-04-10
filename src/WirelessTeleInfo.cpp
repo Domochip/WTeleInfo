@@ -275,7 +275,6 @@ String WebTeleInfo::GetAllLabel()
 // subscribe to MQTT topic after connection
 bool WebTeleInfo::MqttConnect()
 {
-
   if (!WiFi.isConnected())
     return false;
 
@@ -299,6 +298,10 @@ bool WebTeleInfo::MqttConnect()
 
   return _mqttClient.connected();
 }
+
+//------------------------------------------
+//Callback used when an MQTT message arrived
+void WebTeleInfo::MqttCallback(char *topic, uint8_t *payload, unsigned int length) {}
 
 //------------------------------------------
 //Used to initialize configuration properties to default values
@@ -570,7 +573,8 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   if (_ha.protocol == HA_PROTO_MQTT)
   {
     //setup server
-    _mqttClient.setServer(_ha.hostname, _ha.mqtt.port);
+    _mqttClient.setServer(_ha.hostname, _ha.mqtt.port).setCallback(std::bind(&WebTeleInfo::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    ;
 
     //setup client used
     if (!_ha.tls)
