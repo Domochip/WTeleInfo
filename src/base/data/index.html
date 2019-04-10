@@ -83,6 +83,7 @@
                 if(uploadProgress) xhr.upload.addEventListener('progress',uploadProgress);
                 xhr.open(method, url);
                 if(timeout) xhr.timeout=timeout;
+                if(typeof data == "string") xhr.setRequestHeader('Content-type','application/x-www-form-urlencoded');
                 xhr.send(data);
             }
 
