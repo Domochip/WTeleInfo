@@ -1,7 +1,7 @@
 <div id="applicationName" style="display: none;">WirelessTeleInfo</div>
 <div id="shortApplicationName" style="display: none;">WTeleInfo</div>
 
-<h2 class="content-subhead">TeleInfo<span id="l3"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+<h2 class="content-subhead">TeleInfo<span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
 Connected ADCO : <span id="a"></span><br>
 <dl>
     <dt>Home Automation Status</dt>
@@ -10,15 +10,18 @@ Connected ADCO : <span id="a"></span><br>
 </dl>
 
 <script>
-    getJSON("/gs1",
-        function(GS1){
-            for(k in GS1){
-                if((e = $('#' + k)) != undefined) e.innerHTML = GS1[k];
+    //QuerySelector Prefix is added by load function to know into what element queySelector need to look for
+    //var qsp = '#contentX ';
+
+    getJSON("/gs"+qsp[8],
+        function(GS){
+            for(k in GS){
+                if((e = $(qsp+'#'+k)) != undefined) e.innerHTML = GS[k];
             }
-            fadeOut($("#l3"));
+            fadeOut($(qsp+"#l"));
         },
         function(){
-            $("#l3").innerHTML='<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
+            $(qsp+"#l").innerHTML='<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
         }
     );
 </script>

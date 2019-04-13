@@ -92,7 +92,11 @@
                     element.innerHTML='';
                     element.innerHTML=response;
                     var scriptList = element.getElementsByTagName('script');
-                    for(var i=0;i<scriptList.length;i++) runScript(scriptList[i].innerHTML);
+                    for(var i=0;i<scriptList.length;i++) {
+                        //Replace "QuerySelectorPrefix" aka "qsp" : allow script to search into the parent element
+                        scriptList[i].innerHTML=scriptList[i].innerHTML.replace(/qsp/g,'\'#'+element.id+' \'');
+                        runScript(scriptList[i].innerHTML);
+                    }
                     if(callback) callback();
                 });
             };

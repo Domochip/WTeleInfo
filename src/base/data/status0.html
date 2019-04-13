@@ -1,4 +1,4 @@
-<h2 class="content-subhead">System<span id="l0"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
+<h2 class="content-subhead">System<span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
 
 SN : <span id="sn"></span><br>
 Build version : <span id="b"></span><br>
@@ -6,12 +6,15 @@ UpTime : <span id="u"></span><br>
 FreeHeap : <span id="f"></span><br>
 
 <script>
-    getJSON("/gs0", function (GS0) {
-        for(k in GS0){
-            if((e = $('#' + k)) != undefined) e.innerHTML = GS0[k];
+    //QuerySelector Prefix is added by load function to know into what element queySelector need to look for
+    //var qsp = '#content0 ';
+
+    getJSON("/gs"+qsp[8], function (GS) {
+        for(k in GS){
+            if((e = $(qsp+'#'+k)) != undefined) e.innerHTML = GS[k];
         }
-        fadeOut($("#l0"));
+        fadeOut($(qsp+"#l"));
     }, function () {
-        $("#l0").innerHTML = '<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
+        $(qsp+"#l").innerHTML = '<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
     });
 </script>
