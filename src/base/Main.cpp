@@ -159,6 +159,7 @@ void loop(void)
   {
     Serial.println("Rebooting...");
     delay(100);
+    Serial.end();
     ESP.restart();
   }
   yield();

@@ -21,10 +21,6 @@
 <div id='hae' style='display:none'>
 
     <div class="pure-control-group">
-        <label for="hatls">SSL/TLS</label>
-        <input type='checkbox' id='hatls' name='hatls'>
-    </div>
-    <div class="pure-control-group">
         <label for="hahost">Hostname</label>
         <input type='text' id='hahost' name='hahost' maxlength='64' pattern='[A-Za-z0-9-.]+' size='50' placeholder="IP or DNS Name">
         <span class="pure-form-message-inline">(Hostname should match with certificate name if SSL/TLS is enabled)</span>
@@ -44,6 +40,10 @@
             </select>
         </div>
 
+        <div class="pure-control-group">
+            <label for="hahtls">SSL/TLS</label>
+            <input type='checkbox' id='hahtls' name='hahtls'>
+        </div>
         <div id='hahtlse'>
             <div class="pure-control-group">
                 <label for="hahfp">TLS FingerPrint</label>
@@ -197,14 +197,12 @@
         $(qsp+"#hamgbtidiv").style.display=($(qsp+"#hamgbtidiv").style.display==''?'none':'');
         });
 
-    $(qsp+"#hatls").addEventListener('change',function(){
-        if($(qsp+"#hatls").checked){
+    $(qsp+"#hahtls").addEventListener('change',function(){
+        if($(qsp+"#hahtls").checked){
             $(qsp+"#hahtlse").style.display='';
-            $(qsp+"#hamport").value=8883;
         }
         else{
             $(qsp+"#hahtlse").style.display='none';
-            $(qsp+"#hamport").value=1883;
         }
     });
 

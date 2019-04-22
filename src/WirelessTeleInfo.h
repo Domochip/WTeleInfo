@@ -30,6 +30,7 @@ private:
   typedef struct
   {
     byte type = HA_HTTP_GENERIC;
+    bool tls = false;
     byte fingerPrint[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     struct
     {
@@ -62,7 +63,6 @@ private:
   typedef struct
   {
     byte protocol = HA_PROTO_DISABLED;
-    bool tls = false;
     char hostname[64 + 1] = {0};
     uint16_t uploadPeriod = 60;
     HTTP http;
@@ -75,12 +75,12 @@ private:
   String _httpJeedomRequest;
   int _haSendResult = 0;
   char _ADCO[13] = {0};
+  WiFiClient _wifiClient;
+  WiFiClientSecure _wifiClientSecure;
 
   TInfo _tinfo;
   bool _needPublish = false;
   Ticker _publishTicker;
-  WiFiClient _wifiMqttClient;
-  WiFiClientSecure _wifiMqttClientSecure;
   PubSubClient _mqttClient;
   bool _needMqttReconnect = false;
   Ticker _mqttReconnectTicker;

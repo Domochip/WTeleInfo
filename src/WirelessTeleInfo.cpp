@@ -29,7 +29,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
 
       //Replace placeholders
       if (completeURI.indexOf(F("$tls$")) != -1)
-        completeURI.replace(F("$tls$"), _ha.tls ? "s" : "");
+        completeURI.replace(F("$tls$"), _ha.http.tls ? "s" : "");
 
       if (completeURI.indexOf(F("$host$")) != -1)
         completeURI.replace(F("$host$"), _ha.hostname);
@@ -59,18 +59,18 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
             sendURI.replace(F("$val$"), me->value);
 
           //create HTTP request objects
-          WiFiClient client;
-          WiFiClientSecure clientSecure;
           HTTPClient http;
 
           //if tls is enabled or not, we need to provide certificate fingerPrint
-          if (!_ha.tls)
-            http.begin(client, sendURI);
+          if (!_ha.http.tls)
+            http.begin(_wifiClient, sendURI);
           else
           {
-            char fpStr[41];
-            clientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
-            http.begin(clientSecure, sendURI);
+            if (Utils::IsFingerPrintEmpty(_ha.http.fingerPrint))
+              _wifiClientSecure.setInsecure();
+            else
+              _wifiClientSecure.setFingerprint(_ha.http.fingerPrint);
+            http.begin(_wifiClientSecure, sendURI);
           }
 
           _haSendResult = (http.GET() == 200);
@@ -105,7 +105,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
 
       //Replace placeholders
       if (completeURI.indexOf(F("$tls$")) != -1)
-        completeURI.replace(F("$tls$"), _ha.tls ? "s" : "");
+        completeURI.replace(F("$tls$"), _ha.http.tls ? "s" : "");
 
       if (completeURI.indexOf(F("$host$")) != -1)
         completeURI.replace(F("$host$"), _ha.hostname);
@@ -117,18 +117,18 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
         completeURI.replace(F("$adco$"), _ADCO);
 
       //create HTTP request objects
-      WiFiClient client;
-      WiFiClientSecure clientSecure;
       HTTPClient http;
 
       //if tls is enabled or not, we need to provide certificate fingerPrint
-      if (!_ha.tls)
-        http.begin(client, completeURI);
+      if (!_ha.http.tls)
+        http.begin(_wifiClient, completeURI);
       else
       {
-        char fpStr[41];
-        clientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint));
-        http.begin(clientSecure, completeURI);
+        if (Utils::IsFingerPrintEmpty(_ha.http.fingerPrint))
+          _wifiClientSecure.setInsecure();
+        else
+          _wifiClientSecure.setFingerprint(_ha.http.fingerPrint);
+        http.begin(_wifiClientSecure, completeURI);
       }
 
       _haSendResult = (http.GET() == 200);
@@ -308,11 +308,11 @@ void WebTeleInfo::MqttCallback(char *topic, uint8_t *payload, unsigned int lengt
 void WebTeleInfo::SetConfigDefaultValues()
 {
   _ha.protocol = HA_PROTO_DISABLED;
-  _ha.tls = false;
   _ha.hostname[0] = 0;
   _ha.uploadPeriod = 60;
 
   _ha.http.type = HA_HTTP_GENERIC;
+  _ha.http.tls = false;
   memset(_ha.http.fingerPrint, 0, 20);
   _ha.http.generic.uriPattern[0] = 0;
   _ha.http.jeedom.apiKey[0] = 0;
@@ -329,8 +329,6 @@ void WebTeleInfo::ParseConfigJSON(DynamicJsonDocument &doc)
 {
   if (!doc[F("haproto")].isNull())
     _ha.protocol = doc[F("haproto")];
-  if (!doc[F("hatls")].isNull())
-    _ha.tls = doc[F("hatls")];
   if (!doc[F("hahost")].isNull())
     strlcpy(_ha.hostname, doc[F("hahost")], sizeof(_ha.hostname));
   if (!doc[F("haupperiod")].isNull())
@@ -338,6 +336,8 @@ void WebTeleInfo::ParseConfigJSON(DynamicJsonDocument &doc)
 
   if (!doc[F("hahtype")].isNull())
     _ha.http.type = doc[F("hahtype")];
+  if (!doc[F("hahtls")].isNull())
+    _ha.http.tls = doc[F("hahtls")];
   if (!doc[F("hahfp")].isNull())
     Utils::FingerPrintS2A(_ha.http.fingerPrint, doc[F("hahfp")]);
 
@@ -370,10 +370,6 @@ bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
   //if an home Automation protocol has been selected then get common param
   if (_ha.protocol != HA_PROTO_DISABLED)
   {
-    if (request->hasParam(F("hatls"), true))
-      _ha.tls = (request->getParam(F("hatls"), true)->value() == F("on"));
-    else
-      _ha.tls = false;
     if (request->hasParam(F("hahost"), true) && request->getParam(F("hahost"), true)->value().length() < sizeof(_ha.hostname))
       strcpy(_ha.hostname, request->getParam(F("hahost"), true)->value().c_str());
     if (request->hasParam(F("haupperiod"), true))
@@ -387,6 +383,10 @@ bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
 
     if (request->hasParam(F("hahtype"), true))
       _ha.http.type = request->getParam(F("hahtype"), true)->value().toInt();
+    if (request->hasParam(F("hahtls"), true))
+      _ha.http.tls = (request->getParam(F("hahtls"), true)->value() == F("on"));
+    else
+      _ha.http.tls = false;
     if (request->hasParam(F("hahfp"), true))
       Utils::FingerPrintS2A(_ha.http.fingerPrint, request->getParam(F("hahfp"), true)->value().c_str());
 
@@ -452,7 +452,6 @@ String WebTeleInfo::GenerateConfigJSON(bool forSaveFile)
   String gc('{');
 
   gc = gc + F("\"haproto\":") + _ha.protocol;
-  gc = gc + F(",\"hatls\":") + _ha.tls;
   gc = gc + F(",\"hahost\":\"") + _ha.hostname + '"';
   gc = gc + F(",\"haupperiod\":") + _ha.uploadPeriod;
 
@@ -460,6 +459,7 @@ String WebTeleInfo::GenerateConfigJSON(bool forSaveFile)
   if (!forSaveFile || _ha.protocol == HA_PROTO_HTTP)
   {
     gc = gc + F(",\"hahtype\":") + _ha.http.type;
+    gc = gc + F(",\"hahtls\":") + _ha.http.tls;
     gc = gc + F(",\"hahfp\":\"") + Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint, forSaveFile ? 0 : ':') + '"';
 
     gc = gc + F(",\"hahgup\":\"") + _ha.http.generic.uriPattern + '"';
@@ -572,20 +572,8 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   //if MQTT used so configure it
   if (_ha.protocol == HA_PROTO_MQTT)
   {
-    //setup server
-    _mqttClient.setServer(_ha.hostname, _ha.mqtt.port).setCallback(std::bind(&WebTeleInfo::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    ;
-
-    //setup client used
-    if (!_ha.tls)
-    {
-      _mqttClient.setClient(_wifiMqttClient);
-    }
-    else
-    {
-      //_wifiMqttClientSecure.setFingerprint(Utils::FingerPrintA2S(fpStr, ha.fingerPrint));
-      _mqttClient.setClient(_wifiMqttClientSecure);
-    }
+    //setup MQTT client
+    _mqttClient.setClient(_wifiClient).setServer(_ha.hostname, _ha.mqtt.port).setCallback(std::bind(&WebTeleInfo::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
     //Connect
     MqttConnect();

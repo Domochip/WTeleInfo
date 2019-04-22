@@ -20,7 +20,7 @@
 #define APPLICATION1_DESC "DomoChip Wireless TeleInfo"
 #define APPLICATION1_CLASS WebTeleInfo
 
-#define VERSION_NUMBER "3.3.1"
+#define VERSION_NUMBER "3.3.2"
 
 #define DEFAULT_AP_SSID "WirelessTeleInfo"
 #define DEFAULT_AP_PSK "PasswordTeleInfo"
