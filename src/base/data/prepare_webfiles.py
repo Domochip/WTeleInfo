@@ -1,3 +1,4 @@
+import sys
 import os
 import gzip
 import shutil
@@ -16,11 +17,13 @@ def convert_file_to_cppheader(filename):
             hfile.write('const PROGMEM char '+filename.replace(' ','').replace('.','').replace('-','')+'gz[] = {')
             byte=gzfile.read(1)
             first=True
-            while byte!='':
-                if first:
+            while len(byte):
+                if not first:
+                    hfile.write(',')
+                if sys.version_info.major == 2:
                     hfile.write(hex(ord(byte)))
                 else:
-                    hfile.write((',')+hex(ord(byte)))
+                    hfile.write(hex(byte[0]))
                 first=False
                 byte=gzfile.read(1)
             hfile.write('};')
