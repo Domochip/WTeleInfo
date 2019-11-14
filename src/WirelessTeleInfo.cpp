@@ -677,17 +677,17 @@ void WebTeleInfo::AppRun()
   if (_needMqttReconnect)
   {
     _needMqttReconnect = false;
-    Serial.print(F("MQTT Reconnection : "));
+    LOG_SERIAL.print(F("MQTT Reconnection : "));
     if (MqttConnect())
-      Serial.println(F("OK"));
+      LOG_SERIAL.println(F("OK"));
     else
-      Serial.println(F("Failed"));
+      LOG_SERIAL.println(F("Failed"));
   }
 
   //if MQTT required but not connected and reconnect ticker not started
   if (_ha.protocol == HA_PROTO_MQTT && !_mqttClient.connected() && !_mqttReconnectTicker.active())
   {
-    Serial.println(F("MQTT Disconnected"));
+    LOG_SERIAL.println(F("MQTT Disconnected"));
     //set Ticker to reconnect after 20 or 60 sec (Wifi connected or not)
     _mqttReconnectTicker.once_scheduled((WiFi.isConnected() ? 20 : 60), [this]() { _needMqttReconnect = true; _mqttReconnectTicker.detach(); });
   }
@@ -699,7 +699,7 @@ void WebTeleInfo::AppRun()
   if (_needPublish)
   {
     _needPublish = false;
-    Serial.println(F("PublishTick"));
+    LOG_SERIAL.println(F("PublishTick"));
     PublishTick();
   }
 }
