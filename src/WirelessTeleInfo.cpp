@@ -142,7 +142,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
   if (_ha.protocol == HA_PROTO_MQTT)
   {
     //if we are connected
-    if (_mqttClient.connected())
+    if (m_mqttMan.connected())
     {
       //prepare topic
       String completeTopic, thisLabelTopic;
@@ -191,7 +191,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
           thisLabelTopic += me->name;
 
           //send
-          _haSendResult = _mqttClient.publish(thisLabelTopic.c_str(), me->value);
+          _haSendResult = m_mqttMan.publish(thisLabelTopic.c_str(), me->value);
         }
       }
     }
@@ -273,31 +273,7 @@ String WebTeleInfo::GetAllLabel()
 
 //------------------------------------------
 // subscribe to MQTT topic after connection
-bool WebTeleInfo::MqttConnect()
-{
-  if (!WiFi.isConnected())
-    return false;
-
-  char sn[9];
-  sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
-
-  //generate clientID
-  String clientID(F(APPLICATION1_NAME));
-  clientID += sn;
-
-  //Connect
-  if (!_ha.mqtt.username[0])
-    _mqttClient.connect(clientID.c_str());
-  else
-    _mqttClient.connect(clientID.c_str(), _ha.mqtt.username, _ha.mqtt.password);
-
-  if (_mqttClient.connected())
-  {
-    //Subscribe to needed topic
-  }
-
-  return _mqttClient.connected();
-}
+void WebTeleInfo::MqttConnectedCallback(MQTTMan *mqttMan, bool firstConnection) {}
 
 //------------------------------------------
 //Callback used when an MQTT message arrived
@@ -506,7 +482,7 @@ String WebTeleInfo::GenerateStatusJSON()
     break;
   case HA_PROTO_MQTT:
     gs = gs + F("MQTT Connection State : ");
-    switch (_mqttClient.state())
+    switch (m_mqttMan.state())
     {
     case MQTT_CONNECTION_TIMEOUT:
       gs = gs + F("Timed Out");
@@ -537,7 +513,7 @@ String WebTeleInfo::GenerateStatusJSON()
       break;
     }
 
-    if (_mqttClient.state() == MQTT_CONNECTED)
+    if (m_mqttMan.state() == MQTT_CONNECTED)
       gs = gs + F("\",\"has2\":\"Last Publish Result : ") + (_haSendResult ? F("OK") : F("Failed"));
 
     break;
@@ -564,19 +540,19 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   //Stop Publish
   _publishTicker.detach();
 
-  //Stop MQTT Reconnect
-  _mqttReconnectTicker.detach();
-  if (_mqttClient.connected()) //Issue #598 : disconnect() crash if client not yet set
-    _mqttClient.disconnect();
+  //Stop MQTT
+  m_mqttMan.disconnect();
 
   //if MQTT used so configure it
   if (_ha.protocol == HA_PROTO_MQTT)
   {
-    //setup MQTT client
-    _mqttClient.setClient(_wifiClient).setServer(_ha.hostname, _ha.mqtt.port).setCallback(std::bind(&WebTeleInfo::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    //setup MQTT
+    m_mqttMan.setClient(_wifiClient).setServer(_ha.hostname, _ha.mqtt.port);
+    m_mqttMan.setConnectedCallback(std::bind(&WebTeleInfo::MqttConnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
+    m_mqttMan.setCallback(std::bind(&WebTeleInfo::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
     //Connect
-    MqttConnect();
+    m_mqttMan.connect(_ha.mqtt.username, _ha.mqtt.password);
   }
 
   //if HA and upload period != 0, then start ticker
@@ -674,28 +650,12 @@ void WebTeleInfo::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, b
 //Run for timer
 void WebTeleInfo::AppRun()
 {
-  if (_needMqttReconnect)
-  {
-    _needMqttReconnect = false;
-    LOG_SERIAL.print(F("MQTT Reconnection : "));
-    if (MqttConnect())
-      LOG_SERIAL.println(F("OK"));
-    else
-      LOG_SERIAL.println(F("Failed"));
-  }
-
-  //if MQTT required but not connected and reconnect ticker not started
-  if (_ha.protocol == HA_PROTO_MQTT && !_mqttClient.connected() && !_mqttReconnectTicker.active())
-  {
-    LOG_SERIAL.println(F("MQTT Disconnected"));
-    //set Ticker to reconnect after 20 or 60 sec (Wifi connected or not)
-    _mqttReconnectTicker.once_scheduled((WiFi.isConnected() ? 20 : 60), [this]() { _needMqttReconnect = true; _mqttReconnectTicker.detach(); });
-  }
-
   if (_ha.protocol == HA_PROTO_MQTT)
-    _mqttClient.loop();
+    m_mqttMan.loop();
+
   if (Serial.available())
     _tinfo.process(Serial.read() & 0x7f);
+
   if (_needPublish)
   {
     _needPublish = false;
