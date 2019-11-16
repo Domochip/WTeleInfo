@@ -28,6 +28,7 @@ public:
     bool connect(char *username = nullptr, char *password = nullptr);
     using PubSubClient::connected;
     void disconnect();
+    using PubSubClient::subscribe;
     using PubSubClient::beginPublish;
     using PubSubClient::endPublish;
     using PubSubClient::publish;
