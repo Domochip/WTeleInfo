@@ -150,26 +150,11 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
       {
       case HA_MQTT_GENERIC:
         completeTopic = _ha.mqtt.generic.baseTopic;
-
-        //check for final slash
-        if (completeTopic.length() && completeTopic.charAt(completeTopic.length() - 1) != '/')
-          completeTopic += '/';
         break;
       }
 
       //Replace placeholders
-      if (completeTopic.indexOf(F("$sn$")) != -1)
-      {
-        char sn[9];
-        sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
-        completeTopic.replace(F("$sn$"), sn);
-      }
-
-      if (completeTopic.indexOf(F("$mac$")) != -1)
-        completeTopic.replace(F("$mac$"), WiFi.macAddress());
-
-      if (completeTopic.indexOf(F("$model$")) != -1)
-        completeTopic.replace(F("$model$"), APPLICATION1_NAME);
+      MQTTMan::prepareTopic(completeTopic);
 
       if (completeTopic.indexOf(F("$adco$")) != -1)
         completeTopic.replace(F("$adco$"), _ADCO);
