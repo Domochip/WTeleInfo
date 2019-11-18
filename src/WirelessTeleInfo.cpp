@@ -536,8 +536,14 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   //if MQTT used so configure it
   if (_ha.protocol == HA_PROTO_MQTT)
   {
+    //prepare will topic
+    String willTopic = _ha.mqtt.generic.baseTopic;
+    MQTTMan::prepareTopic(willTopic);
+    willTopic += F("connected");
+
     //setup MQTT
     m_mqttMan.setClient(_wifiClient).setServer(_ha.hostname, _ha.mqtt.port);
+    m_mqttMan.setConnectedAndWillTopic(willTopic.c_str());
     m_mqttMan.setConnectedCallback(std::bind(&WebTeleInfo::MqttConnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
     m_mqttMan.setCallback(std::bind(&WebTeleInfo::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
