@@ -87,11 +87,20 @@
         <div class="pure-control-group">
             <label for="hamtype">Type</label>
             <select id='hamtype' name='hamtype'>
-                <option value="0">Generic</option>
+                <option value="0">Generic (Sub-topic using device number)</option>
+                <option value="1">Generic (Same level topic)</option>
             </select>
             <span id="hamtype0i" name="hamtype0i" class="infotip">?</span>
+            <span id="hamtype1i" name="hamtype1i" class="infotip" style="display:none;">?</span>
         </div>
         <div class="pure-control-group" id="hamtype0div" name="hamtype0div" style="display:none;">
+            <label></label>
+            <div class="infotipdiv">
+                Published topics : <br>
+                <b>/$adco$/$label$</b> : all labels received from the counter<br>
+            </div>
+        </div>
+        <div class="pure-control-group" id="hamtype1div" name="hamtype1div" style="display:none;">
             <label></label>
             <div class="infotipdiv">
                 Published topics : <br>
@@ -123,11 +132,9 @@
                 <label></label>
                 <div class="infotipdiv">
                     Base Topic placeholders : <br>
-                    <b>$adco$</b> : serial number of the counter<br>
                     <b>$sn$</b> : Serial Number of this device<br>
                     <b>$mac$</b> : WiFi MAC address of this device<br>
-                    <b>$model$</b> : Model of this device<br>
-                    Ex : DomoChip/<b>$adco$</b>
+                    <b>$model$</b> : Model of this device
                 </div>
             </div>
         </div>
@@ -179,9 +186,25 @@
                 break;
         }
     });
+    $(qsp+"#hamtype").addEventListener('change',function(){
+        switch($(qsp+"#hamtype").value){
+            case "0":
+                $(qsp+"#hamgbte").style.display='';
+                $(qsp+"#hamtype0i").style.display='';
+                $(qsp+"#hamtype1i").style.display='none';
+                $(qsp+"#hamtype1div").style.display='none';
+                break;
+            case "1":
+                $(qsp+"#hamgbte").style.display='';
+                $(qsp+"#hamtype0i").style.display='none';
+                $(qsp+"#hamtype0div").style.display='none';
+                $(qsp+"#hamtype1i").style.display='';
+                break;
+        }
+    });
     $(qsp+"#hahgupi").addEventListener('click',function(){
         $(qsp+"#hahgupidiv").style.display=($(qsp+"#hahgupidiv").style.display==''?'none':'');
-        });
+    });
 
     $(qsp+"#hamtype").addEventListener('change',function(){
         switch($(qsp+"#hamtype").value){
@@ -192,10 +215,13 @@
     });
     $(qsp+"#hamtype0i").addEventListener('click',function(){
         $(qsp+"#hamtype0div").style.display=($(qsp+"#hamtype0div").style.display==''?'none':'');
-        });
+    });
+    $(qsp+"#hamtype1i").addEventListener('click',function(){
+        $(qsp+"#hamtype1div").style.display=($(qsp+"#hamtype1div").style.display==''?'none':'');
+    });
     $(qsp+"#hamgbti").addEventListener('click',function(){
         $(qsp+"#hamgbtidiv").style.display=($(qsp+"#hamgbtidiv").style.display==''?'none':'');
-        });
+    });
 
     $(qsp+"#hahtls").addEventListener('change',function(){
         if($(qsp+"#hahtls").checked){

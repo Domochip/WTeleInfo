@@ -38,11 +38,12 @@ private:
     } jeedom;
   } HTTP;
 
-#define HA_MQTT_GENERIC 0
+#define HA_MQTT_GENERIC1 0
+#define HA_MQTT_GENERIC2 1
 
   typedef struct
   {
-    byte type = HA_MQTT_GENERIC;
+    byte type = HA_MQTT_GENERIC1;
     uint32_t port = 1883;
     char username[128 + 1] = {0};
     char password[150 + 1] = {0};

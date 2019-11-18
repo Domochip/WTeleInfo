@@ -145,16 +145,20 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
     if (m_mqttMan.connected())
     {
       //prepare topic
-      String completeTopic, thisLabelTopic;
-      switch (_ha.mqtt.type)
-      {
-      case HA_MQTT_GENERIC:
-        completeTopic = _ha.mqtt.generic.baseTopic;
-        break;
-      }
+      String completeTopic = _ha.mqtt.generic.baseTopic;
 
       //Replace placeholders
       MQTTMan::prepareTopic(completeTopic);
+
+      switch (_ha.mqtt.type)
+      {
+      case HA_MQTT_GENERIC1:
+        completeTopic += F("$adco$/");
+        break;
+      case HA_MQTT_GENERIC2:
+        //no adco added in this configuration
+        break;
+      }
 
       if (completeTopic.indexOf(F("$adco$")) != -1)
         completeTopic.replace(F("$adco$"), _ADCO);
@@ -170,7 +174,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
         if (publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED)))
         {
           //copy completeTopic in order to "complete" it ...
-          thisLabelTopic = completeTopic;
+          String thisLabelTopic = completeTopic;
 
           //add the label name
           thisLabelTopic += me->name;
@@ -278,7 +282,7 @@ void WebTeleInfo::SetConfigDefaultValues()
   _ha.http.generic.uriPattern[0] = 0;
   _ha.http.jeedom.apiKey[0] = 0;
 
-  _ha.mqtt.type = HA_MQTT_GENERIC;
+  _ha.mqtt.type = HA_MQTT_GENERIC1;
   _ha.mqtt.port = 1883;
   _ha.mqtt.username[0] = 0;
   _ha.mqtt.password[0] = 0;
@@ -391,7 +395,8 @@ bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
 
     switch (_ha.mqtt.type)
     {
-    case HA_MQTT_GENERIC:
+    case HA_MQTT_GENERIC1:
+    case HA_MQTT_GENERIC2:
       if (request->hasParam(F("hamgbt"), true) && request->getParam(F("hamgbt"), true)->value().length() < sizeof(_ha.mqtt.generic.baseTopic))
         strcpy(_ha.mqtt.generic.baseTopic, request->getParam(F("hamgbt"), true)->value().c_str());
 
