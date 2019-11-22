@@ -2,7 +2,9 @@
 <div id="shortApplicationName" style="display: none;">WTeleInfo</div>
 
 <h2 class="content-subhead">TeleInfo<span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
-Connected ADCO : <span id="a"></span><br>
+<dl id="liveData">
+    <dt>Labels List<span id="lastRefresh"></span></dt>
+</dl>
 <dl>
     <dt>Home Automation Status</dt>
     <dd><span id="has1"></span></dd>
@@ -13,10 +15,32 @@ Connected ADCO : <span id="a"></span><br>
     //QuerySelector Prefix is added by load function to know into what element queySelector need to look for
     //var qsp = '#contentX ';
 
+    function parseLiveData(liveData){
+        for(k in liveData){
+            if((e = $(qsp+'#'+k)) != undefined){
+                if($(qsp+'#'+k+'Value').innerText!=liveData[k]){
+                    $(qsp+'#'+k+'Value').innerText=liveData[k];
+                    $(qsp+'#'+k+'Value').style.fontWeight="bold";
+                }
+                else{
+                    $(qsp+'#'+k+'Value').style.fontWeight="normal";
+                }
+            }
+            else{
+                var newElement = document.createElement("dd");
+                newElement.id=k;
+                newElement.innerHTML=k+' : <span id="'+k+'Value">'+liveData[k]+'</span>';
+                $(qsp+'#liveData').appendChild(newElement);
+            }
+            $(qsp+'#lastRefresh').innerText=' (AutoRefreshed : '+(new Date()).toLocaleString()+')';
+        }
+    }
+
     getJSON("/gs"+qsp[8],
         function(GS){
             for(k in GS){
-                if((e = $(qsp+'#'+k)) != undefined) e.innerHTML = GS[k];
+                if(k=='liveData') parseLiveData(GS[k]);
+                else if((e = $(qsp+'#'+k)) != undefined) e.innerHTML = GS[k];
             }
             fadeOut($(qsp+"#l"));
         },
@@ -24,4 +48,12 @@ Connected ADCO : <span id="a"></span><br>
             $(qsp+"#l").innerHTML='<h4 style="display:inline;color:red;"><b> Failed</b></h4>';
         }
     );
+
+    if (!!window.EventSource) {
+        var statusEventSource = new EventSource('/statusEvt'+qsp[8]);
+        statusEventSource.addEventListener('message', function(e) {
+            parseLiveData(JSON.parse(e.data));
+            console.log('statusEvt'+qsp[8]+' : '+e.data);
+        });
+    }
 </script>

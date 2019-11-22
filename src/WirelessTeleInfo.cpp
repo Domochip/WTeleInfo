@@ -75,6 +75,9 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
 
           _haSendResult = (http.GET() == 200);
           http.end();
+
+          //Send published value to Web clients through EventSource
+          m_statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
         }
       }
 
@@ -134,6 +137,9 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
       _haSendResult = (http.GET() == 200);
       http.end();
 
+      //Send published values to Web clients through EventSource
+      m_statusEventSource.send(GetAllLabel().c_str());
+
       break;
     }
   }
@@ -181,6 +187,9 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
 
           //send
           _haSendResult = m_mqttMan.publish(thisLabelTopic.c_str(), me->value);
+
+          //Send published value to Web clients through EventSource
+          m_statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
         }
       }
     }
@@ -460,7 +469,7 @@ String WebTeleInfo::GenerateStatusJSON()
 {
   String gs('{');
 
-  gs = gs + F("\"a\":\"") + _ADCO + '"';
+  gs = gs + F("\"liveData\":") + GetAllLabel();
   gs = gs + F(",\"has1\":\"");
   switch (_ha.protocol)
   {
