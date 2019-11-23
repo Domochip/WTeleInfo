@@ -4,7 +4,7 @@
 
 //------------------------------------------
 // Execute code to upload Infos
-void WebTeleInfo::PublishTick(bool publishAll = true)
+void WebTeleInfo::publishTick(bool publishAll = true)
 {
   //if Home Automation upload not enabled then return
   if (_ha.protocol == HA_PROTO_DISABLED)
@@ -66,7 +66,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
             http.begin(_wifiClient, sendURI);
           else
           {
-            if (Utils::IsFingerPrintEmpty(_ha.http.fingerPrint))
+            if (Utils::isFingerPrintEmpty(_ha.http.fingerPrint))
               _wifiClientSecure.setInsecure();
             else
               _wifiClientSecure.setFingerprint(_ha.http.fingerPrint);
@@ -77,7 +77,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
           http.end();
 
           //Send published value to Web clients through EventSource
-          m_statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
+          _statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
         }
       }
 
@@ -127,7 +127,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
         http.begin(_wifiClient, completeURI);
       else
       {
-        if (Utils::IsFingerPrintEmpty(_ha.http.fingerPrint))
+        if (Utils::isFingerPrintEmpty(_ha.http.fingerPrint))
           _wifiClientSecure.setInsecure();
         else
           _wifiClientSecure.setFingerprint(_ha.http.fingerPrint);
@@ -138,7 +138,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
       http.end();
 
       //Send published values to Web clients through EventSource
-      m_statusEventSource.send(GetAllLabel().c_str());
+      _statusEventSource.send(getAllLabel().c_str());
 
       break;
     }
@@ -148,7 +148,7 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
   if (_ha.protocol == HA_PROTO_MQTT)
   {
     //if we are connected
-    if (m_mqttMan.connected())
+    if (_mqttMan.connected())
     {
       //prepare topic
       String completeTopic = _ha.mqtt.generic.baseTopic;
@@ -186,10 +186,10 @@ void WebTeleInfo::PublishTick(bool publishAll = true)
           thisLabelTopic += me->name;
 
           //send
-          _haSendResult = m_mqttMan.publish(thisLabelTopic.c_str(), me->value);
+          _haSendResult = _mqttMan.publish(thisLabelTopic.c_str(), me->value);
 
           //Send published value to Web clients through EventSource
-          m_statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
+          _statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
         }
       }
     }
@@ -226,7 +226,7 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
     return;
 
   //Publish but not all labels for real time
-  PublishTick(false);
+  publishTick(false);
 
   //LOG
   Serial.println(F("Sent"));
@@ -234,7 +234,7 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 
 //------------------------------------------
 //Parse GET request to get a Counter Label
-String WebTeleInfo::GetLabel(const String &labelName)
+String WebTeleInfo::getLabel(const String &labelName)
 {
   //name : 9char max
   //value : 12char max
@@ -246,7 +246,7 @@ String WebTeleInfo::GetLabel(const String &labelName)
 }
 //------------------------------------------
 //Parse GET request to get ALL Counter Label
-String WebTeleInfo::GetAllLabel()
+String WebTeleInfo::getAllLabel()
 {
   String galvJSON('{');
 
@@ -271,15 +271,15 @@ String WebTeleInfo::GetAllLabel()
 
 //------------------------------------------
 // subscribe to MQTT topic after connection
-void WebTeleInfo::MqttConnectedCallback(MQTTMan *mqttMan, bool firstConnection) {}
+void WebTeleInfo::mqttConnectedCallback(MQTTMan *mqttMan, bool firstConnection) {}
 
 //------------------------------------------
 //Callback used when an MQTT message arrived
-void WebTeleInfo::MqttCallback(char *topic, uint8_t *payload, unsigned int length) {}
+void WebTeleInfo::mqttCallback(char *topic, uint8_t *payload, unsigned int length) {}
 
 //------------------------------------------
 //Used to initialize configuration properties to default values
-void WebTeleInfo::SetConfigDefaultValues()
+void WebTeleInfo::setConfigDefaultValues()
 {
   _ha.protocol = HA_PROTO_DISABLED;
   _ha.hostname[0] = 0;
@@ -299,7 +299,7 @@ void WebTeleInfo::SetConfigDefaultValues()
 }
 //------------------------------------------
 //Parse JSON object into configuration properties
-void WebTeleInfo::ParseConfigJSON(DynamicJsonDocument &doc)
+void WebTeleInfo::parseConfigJSON(DynamicJsonDocument &doc)
 {
   if (!doc[F("haproto")].isNull())
     _ha.protocol = doc[F("haproto")];
@@ -313,7 +313,7 @@ void WebTeleInfo::ParseConfigJSON(DynamicJsonDocument &doc)
   if (!doc[F("hahtls")].isNull())
     _ha.http.tls = doc[F("hahtls")];
   if (!doc[F("hahfp")].isNull())
-    Utils::FingerPrintS2A(_ha.http.fingerPrint, doc[F("hahfp")]);
+    Utils::fingerPrintS2A(_ha.http.fingerPrint, doc[F("hahfp")]);
 
   if (!doc[F("hahgup")].isNull())
     strlcpy(_ha.http.generic.uriPattern, doc[F("hahgup")], sizeof(_ha.http.generic.uriPattern));
@@ -335,7 +335,7 @@ void WebTeleInfo::ParseConfigJSON(DynamicJsonDocument &doc)
 }
 //------------------------------------------
 //Parse HTTP POST parameters in request into configuration properties
-bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
+bool WebTeleInfo::parseConfigWebRequest(AsyncWebServerRequest *request)
 {
   //Parse HA protocol
   if (request->hasParam(F("haproto"), true))
@@ -362,7 +362,7 @@ bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
     else
       _ha.http.tls = false;
     if (request->hasParam(F("hahfp"), true))
-      Utils::FingerPrintS2A(_ha.http.fingerPrint, request->getParam(F("hahfp"), true)->value().c_str());
+      Utils::fingerPrintS2A(_ha.http.fingerPrint, request->getParam(F("hahfp"), true)->value().c_str());
 
     switch (_ha.http.type)
     {
@@ -420,7 +420,7 @@ bool WebTeleInfo::ParseConfigWebRequest(AsyncWebServerRequest *request)
 }
 //------------------------------------------
 //Generate JSON from configuration properties
-String WebTeleInfo::GenerateConfigJSON(bool forSaveFile)
+String WebTeleInfo::generateConfigJSON(bool forSaveFile)
 {
   char fpStr[60];
 
@@ -435,7 +435,7 @@ String WebTeleInfo::GenerateConfigJSON(bool forSaveFile)
   {
     gc = gc + F(",\"hahtype\":") + _ha.http.type;
     gc = gc + F(",\"hahtls\":") + _ha.http.tls;
-    gc = gc + F(",\"hahfp\":\"") + Utils::FingerPrintA2S(fpStr, _ha.http.fingerPrint, forSaveFile ? 0 : ':') + '"';
+    gc = gc + F(",\"hahfp\":\"") + Utils::fingerPrintA2S(fpStr, _ha.http.fingerPrint, forSaveFile ? 0 : ':') + '"';
 
     gc = gc + F(",\"hahgup\":\"") + _ha.http.generic.uriPattern + '"';
 
@@ -465,11 +465,11 @@ String WebTeleInfo::GenerateConfigJSON(bool forSaveFile)
 }
 //------------------------------------------
 //Generate JSON of application status
-String WebTeleInfo::GenerateStatusJSON()
+String WebTeleInfo::generateStatusJSON()
 {
   String gs('{');
 
-  gs = gs + F("\"liveData\":") + GetAllLabel();
+  gs = gs + F("\"liveData\":") + getAllLabel();
   gs = gs + F(",\"has1\":\"");
   switch (_ha.protocol)
   {
@@ -481,7 +481,7 @@ String WebTeleInfo::GenerateStatusJSON()
     break;
   case HA_PROTO_MQTT:
     gs = gs + F("MQTT Connection State : ");
-    switch (m_mqttMan.state())
+    switch (_mqttMan.state())
     {
     case MQTT_CONNECTION_TIMEOUT:
       gs = gs + F("Timed Out");
@@ -512,7 +512,7 @@ String WebTeleInfo::GenerateStatusJSON()
       break;
     }
 
-    if (m_mqttMan.state() == MQTT_CONNECTED)
+    if (_mqttMan.state() == MQTT_CONNECTED)
       gs = gs + F("\",\"has2\":\"Last Publish Result : ") + (_haSendResult ? F("OK") : F("Failed"));
 
     break;
@@ -524,7 +524,7 @@ String WebTeleInfo::GenerateStatusJSON()
 }
 //------------------------------------------
 //code to execute during initialization and reinitialization of the app
-bool WebTeleInfo::AppInit(bool reInit = false)
+bool WebTeleInfo::appInit(bool reInit = false)
 {
   if (!reInit)
   {
@@ -540,7 +540,7 @@ bool WebTeleInfo::AppInit(bool reInit = false)
   _publishTicker.detach();
 
   //Stop MQTT
-  m_mqttMan.disconnect();
+  _mqttMan.disconnect();
 
   //if MQTT used so configure it
   if (_ha.protocol == HA_PROTO_MQTT)
@@ -551,19 +551,19 @@ bool WebTeleInfo::AppInit(bool reInit = false)
     willTopic += F("connected");
 
     //setup MQTT
-    m_mqttMan.setClient(_wifiClient).setServer(_ha.hostname, _ha.mqtt.port);
-    m_mqttMan.setConnectedAndWillTopic(willTopic.c_str());
-    m_mqttMan.setConnectedCallback(std::bind(&WebTeleInfo::MqttConnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
-    m_mqttMan.setCallback(std::bind(&WebTeleInfo::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    _mqttMan.setClient(_wifiClient).setServer(_ha.hostname, _ha.mqtt.port);
+    _mqttMan.setConnectedAndWillTopic(willTopic.c_str());
+    _mqttMan.setConnectedCallback(std::bind(&WebTeleInfo::mqttConnectedCallback, this, std::placeholders::_1, std::placeholders::_2));
+    _mqttMan.setCallback(std::bind(&WebTeleInfo::mqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
     //Connect
-    m_mqttMan.connect(_ha.mqtt.username, _ha.mqtt.password);
+    _mqttMan.connect(_ha.mqtt.username, _ha.mqtt.password);
   }
 
   //if HA and upload period != 0, then start ticker
   if (_ha.protocol != HA_PROTO_DISABLED && _ha.uploadPeriod != 0)
   {
-    PublishTick(); //if configuration changed, publish immediately
+    publishTick(); //if configuration changed, publish immediately
     _publishTicker.attach(_ha.uploadPeriod, [this]() { this->_needPublish = true; });
   }
 
@@ -586,7 +586,7 @@ bool WebTeleInfo::AppInit(bool reInit = false)
 }
 //------------------------------------------
 //Return HTML Code to insert into Status Web page
-const uint8_t *WebTeleInfo::GetHTMLContent(WebPageForPlaceHolder wp)
+const uint8_t *WebTeleInfo::getHTMLContent(WebPageForPlaceHolder wp)
 {
   switch (wp)
   {
@@ -603,7 +603,7 @@ const uint8_t *WebTeleInfo::GetHTMLContent(WebPageForPlaceHolder wp)
   return nullptr;
 };
 //and his Size
-size_t WebTeleInfo::GetHTMLContentSize(WebPageForPlaceHolder wp)
+size_t WebTeleInfo::getHTMLContentSize(WebPageForPlaceHolder wp)
 {
   switch (wp)
   {
@@ -621,7 +621,7 @@ size_t WebTeleInfo::GetHTMLContentSize(WebPageForPlaceHolder wp)
 };
 //------------------------------------------
 //code to register web request answer to the web server
-void WebTeleInfo::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
+void WebTeleInfo::appInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
 {
   server.on("/getLabel", HTTP_GET, [this](AsyncWebServerRequest *request) {
     //if no name passed
@@ -638,7 +638,7 @@ void WebTeleInfo::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, b
       request->send(400, F("text/html"), F("Incorrect label name"));
       return;
     }
-    String labelResponse = GetLabel(request->getParam(F("name"))->value());
+    String labelResponse = getLabel(request->getParam(F("name"))->value());
     //if return value is empty, label were not found
     if (!labelResponse.length())
       request->send(500, F("text/html"), F("Label cannot be found"));
@@ -647,16 +647,16 @@ void WebTeleInfo::AppInitWebServer(AsyncWebServer &server, bool &shouldReboot, b
   });
 
   server.on("/getAllLabel", HTTP_GET, [this](AsyncWebServerRequest *request) {
-    request->send(200, F("text/json"), GetAllLabel());
+    request->send(200, F("text/json"), getAllLabel());
   });
 }
 
 //------------------------------------------
 //Run for timer
-void WebTeleInfo::AppRun()
+void WebTeleInfo::appRun()
 {
   if (_ha.protocol == HA_PROTO_MQTT)
-    m_mqttMan.loop();
+    _mqttMan.loop();
 
   if (Serial.available())
     _tinfo.process(Serial.read() & 0x7f);
@@ -665,7 +665,7 @@ void WebTeleInfo::AppRun()
   {
     _needPublish = false;
     LOG_SERIAL.println(F("PublishTick"));
-    PublishTick();
+    publishTick();
   }
 }
 
