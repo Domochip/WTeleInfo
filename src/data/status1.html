@@ -2,13 +2,12 @@
 <div id="shortApplicationName" style="display: none;">WTeleInfo</div>
 
 <h2 class="content-subhead">TeleInfo<span id="l"><h6 style="display:inline"><b> Loading...</b></h6></span></h2>
-<dl id="liveData">
-    <dt>Labels List<span id="lastRefresh"></span></dt>
-</dl>
-<dl>
-    <dt>Home Automation Status</dt>
-    <dd><span id="has1"></span></dd>
-    <dd><span id="has2"></span></dd>
+<h3 class="content-subhead">Labels List<span id="lastRefresh"> (AutoRefresh)</span></h3>
+<dl id="liveData"></dl>
+<h3 class="content-subhead">Home Automation Status</h3>
+<dl id="has">
+    <dd id="has1"></dd>
+    <dd id="has2"></dd>
 </dl>
 
 <script>
@@ -17,22 +16,23 @@
 
     function parseLiveData(liveData){
         for(k in liveData){
-            if((e = $(qsp+'#'+k)) != undefined){
-                if($(qsp+'#'+k+'Value').innerText!=liveData[k]){
-                    $(qsp+'#'+k+'Value').innerText=liveData[k];
-                    $(qsp+'#'+k+'Value').style.fontWeight="bold";
+            kForId=(/[^a-zA-Z]/.test(k[0]) ? 'a' : '')+k; //k[0] is not in a-zA-Z then we need to add 'a'
+            if($(qsp+'#'+kForId) != undefined){
+                var existingElement= $(qsp+'#'+kForId+'Value');
+                if(existingElement.innerText!=liveData[k]){
+                    existingElement.innerText=liveData[k];
+                    existingElement.style.fontWeight="bold";
                 }
                 else{
-                    $(qsp+'#'+k+'Value').style.fontWeight="normal";
+                    existingElement.style.fontWeight="normal";
                 }
             }
             else{
                 var newElement = document.createElement("dd");
-                newElement.id=k;
-                newElement.innerHTML=k+' : <span id="'+k+'Value">'+liveData[k]+'</span>';
+                newElement.id=kForId;
+                newElement.innerHTML=k+' : <span id="'+kForId+'Value">'+liveData[k]+'</span>';
                 $(qsp+'#liveData').appendChild(newElement);
             }
-            $(qsp+'#lastRefresh').innerText=' (AutoRefreshed : '+(new Date()).toLocaleString()+')';
         }
     }
 
@@ -52,8 +52,9 @@
     if (!!window.EventSource) {
         var statusEventSource = new EventSource('/statusEvt'+qsp[8]);
         statusEventSource.addEventListener('message', function(e) {
-            parseLiveData(JSON.parse(e.data));
             console.log('statusEvt'+qsp[8]+' : '+e.data);
+            parseLiveData(JSON.parse(e.data));
+            $(qsp+'#lastRefresh').innerText=' ('+(new Date()).toLocaleString()+')';
         });
     }
 </script>
