@@ -527,12 +527,13 @@ bool WebTeleInfo::appInit(bool reInit = false)
 {
   if (!reInit)
   {
-    Serial.flush();
-    Serial.end();
-    //Start @ 1200
-    Serial.begin(1200);
-    //then switch to Serial2
-    Serial.swap();
+    //Serial is already opened as LOG_SERIAL using 1200
+    // Serial.flush();
+    // Serial.end();
+    // //Start @ 1200
+    // Serial.begin(1200);
+
+    Serial.pins(15, 13); //swap ESP8266 pins to alternative positions (D7(GPIO13)(RX)/D8(GPIO15)(TX))
   }
 
   //Stop Publish
