@@ -103,7 +103,7 @@ Sur la page de configuration, choisir le mode HTTP et Jeedom Teleinfo Plugin en 
 ### Envoi MQTT
 
 Sur la page de configuration, choisir le mode MQTT et renseigner un topic de base
-ex : $model$/$adco$
+ex : $model$
 
 Seront ainsi publié :
 - WTeleInfo/XXXXXXXXX/ADCO
