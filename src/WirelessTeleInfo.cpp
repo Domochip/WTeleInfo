@@ -236,9 +236,8 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 //Parse GET request to get a Counter Label
 String WebTeleInfo::getLabel(const String &labelName)
 {
-  //name : 9char max
   //value : 12char max
-  char value[12];
+  char value[13];
   if (!_tinfo.valueGet((char *)labelName.c_str(), value))
     return String();
   else
