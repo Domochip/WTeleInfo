@@ -19,12 +19,20 @@
             kForId=(/[^a-zA-Z]/.test(k[0]) ? 'a' : '')+k; //k[0] is not in a-zA-Z then we need to add 'a'
             if($(qsp+'#'+kForId) != undefined){
                 var existingElement= $(qsp+'#'+kForId+'Value');
-                if(existingElement.innerText!=liveData[k]){
-                    existingElement.innerText=liveData[k];
-                    existingElement.style.fontWeight="bold";
+                if(existingElement.tagName=='INPUT'){
+                    if(existingElement.val!=liveData[k]){
+                        existingElement.val=liveData[k];
+                        existingElement.dispatchEvent(new Event('change'));
+                    }
                 }
                 else{
-                    existingElement.style.fontWeight="normal";
+                    if(existingElement.innerText!=liveData[k]){
+                        existingElement.innerText=liveData[k];
+                        existingElement.style.fontWeight="bold";
+                    }
+                    else{
+                        existingElement.style.fontWeight="normal";
+                    }
                 }
             }
             else{
