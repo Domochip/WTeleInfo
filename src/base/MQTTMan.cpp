@@ -5,7 +5,11 @@ void MQTTMan::prepareTopic(String &topic)
     if (topic.indexOf(F("$sn$")) != -1)
     {
         char sn[9];
+#ifdef ESP8266
         sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
+#else
+        sprintf_P(sn, PSTR("%08x"), (uint32_t)(ESP.getEfuseMac() << 40 >> 40));
+#endif
         topic.replace(F("$sn$"), sn);
     }
 
@@ -26,7 +30,11 @@ bool MQTTMan::connect(bool firstConnection)
         return false;
 
     char sn[9];
+#ifdef ESP8266
     sprintf_P(sn, PSTR("%08x"), ESP.getChipId());
+#else
+    sprintf_P(sn, PSTR("%08x"), (uint32_t)(ESP.getEfuseMac() << 40 >> 40));
+#endif
 
     //generate clientID
     String clientID(F(APPLICATION1_NAME));
@@ -107,17 +115,24 @@ bool MQTTMan::loop()
     if (_needMqttReconnect)
     {
         _needMqttReconnect = false;
+#ifdef LOG_SERIAL
         LOG_SERIAL.print(F("MQTT Reconnection : "));
-        if (connect(false))
+#endif
+        bool res = connect(false);
+#ifdef LOG_SERIAL
+        if (res)
             LOG_SERIAL.println(F("OK"));
         else
             LOG_SERIAL.println(F("Failed"));
+#endif
     }
 
     //if not connected and reconnect ticker not started
     if (!connected() && !_mqttReconnectTicker.active())
     {
+#ifdef LOG_SERIAL
         LOG_SERIAL.println(F("MQTT Disconnected"));
+#endif
         //set Ticker to reconnect after 20 or 60 sec (Wifi connected or not)
         _mqttReconnectTicker.once_scheduled((WiFi.isConnected() ? 20 : 60), [this]() { _needMqttReconnect = true; _mqttReconnectTicker.detach(); });
     }
