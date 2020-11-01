@@ -15,8 +15,6 @@ const char appDataPredefPassword[] PROGMEM = "ewcXoCt4HHjZUvY1";
 #include <Ticker.h>
 #include "LibTeleInfo.h"
 
-#define TELEINFO_PIN D5
-
 class WebTeleInfo : public Application
 {
 private:
