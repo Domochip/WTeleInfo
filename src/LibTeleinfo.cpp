@@ -654,6 +654,10 @@ ValueList * TInfo::checkLine(char * pline)
   if (pline==NULL)
     return NULL;
 
+  // prevent stack smashing
+  if(len > TINFO_BUFSIZE)
+    return NULL; 
+
   len = strlen(pline); 
 
   // a line should be at least 7 Char
