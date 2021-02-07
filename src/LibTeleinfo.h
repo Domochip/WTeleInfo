@@ -38,9 +38,9 @@
 
 // Using ESP8266 ?
 #ifdef ESP8266
-//#include "stdlib_noniso.h"
 #include <ESP8266WiFi.h>
 #endif
+
 
 // Define this if you want library to be verbose
 //#define TI_DEBUG
@@ -67,16 +67,26 @@
   #define TI_Debugflush  
 #endif
 
+#if defined (ESP8266) || defined (ESP32)
+  // For 4 bytes Aligment boundaries
+  #define ESP_allocAlign(size)  ((size + 3) & ~((size_t) 3))
+#endif
+
+#pragma pack(push)  // push current alignment to stack
+#pragma pack(1)     // set alignment to 1 byte boundary
+
 // Linked list structure containing all values received
 typedef struct _ValueList ValueList;
 struct _ValueList 
 {
   ValueList *next; // next element
-  uint8_t checksum;// checksum
-  uint8_t flags;   // specific flags
   char  * name;    // LABEL of value name
   char  * value;   // value 
+  uint8_t checksum;// checksum
+  uint8_t flags;   // specific flags
 };
+
+#pragma pack(pop)
 
 // Library state machine
 enum _State_e {
@@ -108,27 +118,25 @@ class TInfo
 {
   public:
     TInfo();
-    void        init();
-    void    process (char c);
-    void        attachADPS(void (*_fn_ADPS)(uint8_t phase));  
-    void        attachData(void (*_fn_data)(ValueList * valueslist, uint8_t state));  
-    void        attachNewFrame(void (*_fn_new_frame)(ValueList * valueslist));  
-    //void        attachUpdatedFrame(void (*_fn_updated_frame)(ValueList * valueslist));  
+    void          init();
+    _State_e      process (char c);
+    void          attachADPS(void (*_fn_ADPS)(uint8_t phase));  
+    void          attachData(void (*_fn_data)(ValueList * valueslist, uint8_t state));  
+    void          attachNewFrame(void (*_fn_new_frame)(ValueList * valueslist));  
     void        attachUpdatedFrame(std::function<void(ValueList*)> fn_updated_frame);  
-    
-    ValueList * addCustomValue(char * name, char * value, uint8_t * flags);
-    ValueList * getList(void);
-    uint8_t     valuesDump(void);
-    char *      valueGet(char * name, char * value);
-    boolean     listDelete();
+    ValueList *   addCustomValue(char * name, char * value, uint8_t * flags);
+    ValueList *   getList(void);
+    uint8_t       valuesDump(void);
+    char *        valueGet(char * name, char * value);
+    boolean       listDelete();
+    unsigned char calcChecksum(char *etiquette, char *valeur) ;
 
   private:
-    void       clearBuffer();
+    void          clearBuffer();
     ValueList *   valueAdd (char * name, char * value, uint8_t checksum, uint8_t * flags);
     boolean       valueRemove (char * name);
     boolean       valueRemoveFlagged(uint8_t flags);
     int           labelCount();
-    unsigned char calcChecksum(char *etiquette, char *valeur) ;
     void          customLabel( char * plabel, char * pvalue, uint8_t * pflags) ;
     ValueList *   checkLine(char * pline) ;
 
