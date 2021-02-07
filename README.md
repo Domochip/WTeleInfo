@@ -118,13 +118,15 @@ This project uses a Library from hallard/LibTeleinfo repository.
 This is a generic Teleinfo French Meter Measure Library
 Charles Hallard made a very great job with this one.
 
-I recommend you his blog too : https://hallard.me/
+I recommend you his blog : https://hallard.me/
+And his company website : https://ch2i.eu/en
 
 Ce projet utilise la librairie libTeleInfo provenant du dépôt hallard/LibTeleinfo.
 C'est une librairie générique de gestion du protocole TeleInfo (ERDF - Enedis)
 Charles Hallard a fait un excellent travail.
 
 je vous recommande son blog : https://hallard.me/
+et son site professionnel : https://ch2i.eu/
 
 ## License
 This project is placed under terms of Licence Creative Commons Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions 4.0 International.
