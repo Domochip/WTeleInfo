@@ -87,7 +87,7 @@ void WebTeleInfo::publishTick(bool publishAll = true)
       if (!_ADCO[0])
         return;
 
-      completeURI = F("http$tls$://$host$/plugins/teleinfo/core/php/jeeTeleinfo.php?api=$apikey$&ADCO=$adco$");
+      completeURI = F("http$tls$://$host$/plugins/teleinfo/core/php/jeeTeleinfo.php?apikey=$apikey$&ADCO=$adco$");
 
       //initialize data list to send
       _httpJeedomRequest = "";
