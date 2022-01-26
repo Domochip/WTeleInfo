@@ -64,6 +64,8 @@ private:
     MQTT mqtt;
   } HomeAutomation;
 
+  _Mode_e _tinfoMode = TINFO_MODE_HISTORIQUE;
+
   HomeAutomation _ha;
 
   //for returning Status

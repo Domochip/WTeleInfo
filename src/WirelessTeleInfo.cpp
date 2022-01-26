@@ -77,7 +77,7 @@ void WebTeleInfo::publishTick(bool publishAll = true)
           http.end();
 
           //Send published value to Web clients through EventSource
-          _statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
+          _statusEventSource.send((String("{\"") + (char *)me->name + "\":\"" + (char *)me->value + "\"}").c_str());
         }
       }
 
@@ -98,7 +98,7 @@ void WebTeleInfo::publishTick(bool publishAll = true)
         me = me->next;
         //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO (it will be added))
         if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("MOTDETAT")) != 0)
-          _httpJeedomRequest += String("&") + me->name + '=' + me->value;
+          _httpJeedomRequest += String("&") + (char *)me->name + '=' + (char *)me->value;
       }
       //do we need to send data
       if (_httpJeedomRequest == "")
@@ -183,13 +183,13 @@ void WebTeleInfo::publishTick(bool publishAll = true)
           String thisLabelTopic = completeTopic;
 
           //add the label name
-          thisLabelTopic += me->name;
+          thisLabelTopic += (char *)me->name;
 
           //send
           _haSendResult = _mqttMan.publish(thisLabelTopic.c_str(), me->value);
 
           //Send published value to Web clients through EventSource
-          _statusEventSource.send((String("{\"") + me->name + "\":\"" + me->value + "\"}").c_str());
+          _statusEventSource.send((String("{\"") + (char *)me->name + "\":\"" + (char *)me->value + "\"}").c_str());
         }
       }
     }
@@ -260,7 +260,7 @@ String WebTeleInfo::getAllLabel()
       galvJSON += ',';
     else
       first = false;
-    galvJSON = galvJSON + '\"' + vl->name + F("\":\"") + vl->value + F("\"\r\n");
+    galvJSON = galvJSON + '\"' + (char *)vl->name + F("\":\"") + (char *)vl->value + F("\"\r\n");
   }
 
   galvJSON += '}';
@@ -280,6 +280,8 @@ void WebTeleInfo::mqttCallback(char *topic, uint8_t *payload, unsigned int lengt
 //Used to initialize configuration properties to default values
 void WebTeleInfo::setConfigDefaultValues()
 {
+  _tinfoMode = TINFO_MODE_HISTORIQUE;
+
   _ha.protocol = HA_PROTO_DISABLED;
   _ha.hostname[0] = 0;
   _ha.uploadPeriod = 60;
@@ -300,6 +302,9 @@ void WebTeleInfo::setConfigDefaultValues()
 //Parse JSON object into configuration properties
 void WebTeleInfo::parseConfigJSON(DynamicJsonDocument &doc)
 {
+  if (!doc[F("tim")].isNull())
+    _tinfoMode = doc[F("tim")];
+
   if (!doc[F("haproto")].isNull())
     _ha.protocol = doc[F("haproto")];
   if (!doc[F("hahost")].isNull())
@@ -336,6 +341,10 @@ void WebTeleInfo::parseConfigJSON(DynamicJsonDocument &doc)
 //Parse HTTP POST parameters in request into configuration properties
 bool WebTeleInfo::parseConfigWebRequest(AsyncWebServerRequest *request)
 {
+  //Parse TeleInfo mode
+  if (request->hasParam(F("tim"), true))
+    _tinfoMode = (_Mode_e)request->getParam(F("tim"), true)->value().toInt();
+
   //Parse HA protocol
   if (request->hasParam(F("haproto"), true))
     _ha.protocol = request->getParam(F("haproto"), true)->value().toInt();
@@ -425,7 +434,9 @@ String WebTeleInfo::generateConfigJSON(bool forSaveFile)
 
   String gc('{');
 
-  gc = gc + F("\"haproto\":") + _ha.protocol;
+  gc = gc + F("\"tim\":") + _tinfoMode;
+
+  gc = gc + F(",\"haproto\":") + _ha.protocol;
   gc = gc + F(",\"hahost\":\"") + _ha.hostname + '"';
   gc = gc + F(",\"haupperiod\":") + _ha.uploadPeriod;
 
@@ -525,16 +536,16 @@ String WebTeleInfo::generateStatusJSON()
 //code to execute during initialization and reinitialization of the app
 bool WebTeleInfo::appInit(bool reInit = false)
 {
-  if (!reInit)
-  {
-    //Serial is already opened as LOG_SERIAL using 1200
-    // Serial.flush();
-    // Serial.end();
-    // //Start @ 1200
-    // Serial.begin(1200);
+  //Prepare Serial port according to the tinfoMode
+  Serial.flush();
+  Serial.end();
+  //begin Serial to the right speed
+  Serial.begin(_tinfoMode == TINFO_MODE_HISTORIQUE ? 1200 : 9600);
+  Serial.pins(15, 13); //swap ESP8266 pins to alternative positions (D7(GPIO13)(RX)/D8(GPIO15)(TX))
 
-    Serial.pins(15, 13); //swap ESP8266 pins to alternative positions (D7(GPIO13)(RX)/D8(GPIO15)(TX))
-  }
+  //Initialize _tinfo (clear all labels, clear buffer, update mode)
+  _tinfo.init(_tinfoMode);
+
 
   //Stop Publish
   _publishTicker.detach();
@@ -567,21 +578,6 @@ bool WebTeleInfo::appInit(bool reInit = false)
     _publishTicker.attach(_ha.uploadPeriod, [this]() { this->_needPublish = true; });
   }
 
-  if (!reInit)
-  {
-    //try to consume Serial Data until end of TeleInfo frame
-    char c = 0;
-    while (c != 0x03)
-    {
-      if (!Serial.available())
-        delay(100);
-      if (Serial.available())
-        c = Serial.read() & 0x7f;
-      else
-        break;
-    }
-    return c == 0x03;
-  }
   return true;
 }
 //------------------------------------------
@@ -675,7 +671,7 @@ WebTeleInfo::WebTeleInfo(char appId, String appName) : Application(appId, appNam
 {
   // Init and configure TeleInfo
   _ADCO[0] = 0;
-  _tinfo.init();
+  _tinfo.init(_tinfoMode);
   _tinfo.attachUpdatedFrame([this](ValueList *vl) {
     this->tinfoUpdatedFrame(vl);
   });
