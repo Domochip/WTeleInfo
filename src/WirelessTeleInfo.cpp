@@ -38,7 +38,9 @@ void WebTeleInfo::publishTick(bool publishAll = true)
         completeURI.replace(F("$apikey$"), _ha.http.jeedom.apiKey);
 
       if (completeURI.indexOf(F("$adco$")) != -1)
-        completeURI.replace(F("$adco$"), _ADCO);
+        completeURI.replace(F("$adco$"), _SN);
+      if (completeURI.indexOf(F("$adsc$")) != -1)
+        completeURI.replace(F("$adsc$"), _SN);
 
       _haSendResult = true;
 
@@ -46,8 +48,8 @@ void WebTeleInfo::publishTick(bool publishAll = true)
       while (me->next && _haSendResult)
       {
         me = me->next;
-        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO (it will be added))
-        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("MOTDETAT")) != 0)
+        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO/ADSC (it will be added))
+        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("ADSC")) != 0)
         {
 
           String sendURI = completeURI;
@@ -83,14 +85,14 @@ void WebTeleInfo::publishTick(bool publishAll = true)
 
       break;
     case HA_HTTP_JEEDOM_TELEINFO:
-      //if we didn't find ADCO then we can't send stuff so return
-      if (!_ADCO[0])
+      //if we didn't find counter SN then we can't send stuff so return
+      if (!_SN[0])
         return;
 
       completeURI = F("http$tls$://$host$/plugins/teleinfo/core/php/jeeTeleinfo.php?apikey=$apikey$");
 
       //initialize data list to send
-      _httpJeedomRequest = String(F("{\"device\":{\"")) + _ADCO + F("\":{\"device\":\"") + _ADCO + '"';
+      _httpJeedomRequest = String(F("{\"device\":{\"")) + _SN + F("\":{\"device\":\"") + _SN + '"';
 
       bool sendNeeded = false;
 
@@ -98,8 +100,8 @@ void WebTeleInfo::publishTick(bool publishAll = true)
       while (me->next)
       {
         me = me->next;
-        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO)
-        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0)
+        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO/ADSC)
+        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("ADSC")) != 0)
         {
           _httpJeedomRequest += String(",\"") + (char *)me->name + F("\":\"") + (char *)me->value + '"';
           sendNeeded = true;
@@ -168,12 +170,14 @@ void WebTeleInfo::publishTick(bool publishAll = true)
         completeTopic += F("$adco$/");
         break;
       case HA_MQTT_GENERIC2:
-        //no adco added in this configuration
+        //no adco/adsc added in this configuration
         break;
       }
 
       if (completeTopic.indexOf(F("$adco$")) != -1)
-        completeTopic.replace(F("$adco$"), _ADCO);
+        completeTopic.replace(F("$adco$"), _SN);
+      if (completeTopic.indexOf(F("$adsc$")) != -1)
+        completeTopic.replace(F("$adsc$"), _SN);
 
       _haSendResult = true;
 
@@ -210,20 +214,20 @@ void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
   if (!me)
     return;
 
-  if (!_ADCO[0])
+  if (!_SN[0])
   {
-    //Find ADCO
-    ValueList *adcoLookup = me;
-    while (adcoLookup->next)
+    //Find ADCO/ADSC
+    ValueList *snLookup = me;
+    while (snLookup->next)
     {
-      adcoLookup = adcoLookup->next;
-      if (!strcmp_P(adcoLookup->name, PSTR("ADCO")))
-        strcpy(_ADCO, adcoLookup->value);
-    }
-    if (_ADCO[0])
-    {
-      Serial.print(F("ADCO : "));
-      Serial.println(_ADCO);
+      snLookup = snLookup->next;
+      if (!strcmp_P(snLookup->name, PSTR("ADCO")) || !strcmp_P(snLookup->name, PSTR("ADSC")))
+      {
+        strcpy(_SN, snLookup->value);
+        Serial.print(snLookup->name);
+        Serial.print(F(" : "));
+        Serial.println(_SN);
+      }
     }
   }
 
@@ -676,7 +680,7 @@ void WebTeleInfo::appRun()
 WebTeleInfo::WebTeleInfo(char appId, String appName) : Application(appId, appName)
 {
   // Init and configure TeleInfo
-  _ADCO[0] = 0;
+  _SN[0] = 0;
   _tinfo.init(_tinfoMode);
   _tinfo.attachUpdatedFrame([this](ValueList *vl) {
     this->tinfoUpdatedFrame(vl);

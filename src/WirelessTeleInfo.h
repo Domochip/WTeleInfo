@@ -71,7 +71,7 @@ private:
   //for returning Status
   String _httpJeedomRequest;
   int _haSendResult = 0;
-  char _ADCO[13] = {0};
+  char _SN[13] = {0};
   WiFiClient _wifiClient;
   WiFiClientSecure _wifiClientSecure;
 
