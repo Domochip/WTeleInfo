@@ -87,24 +87,31 @@ void WebTeleInfo::publishTick(bool publishAll = true)
       if (!_ADCO[0])
         return;
 
-      completeURI = F("http$tls$://$host$/plugins/teleinfo/core/php/jeeTeleinfo.php?apikey=$apikey$&ADCO=$adco$");
+      completeURI = F("http$tls$://$host$/plugins/teleinfo/core/php/jeeTeleinfo.php?apikey=$apikey$");
 
       //initialize data list to send
-      _httpJeedomRequest = "";
+      _httpJeedomRequest = String(F("{\"device\":{\"")) + _ADCO + F("\":{\"device\":\"") + _ADCO + '"';
+
+      bool sendNeeded = false;
 
       //go through labels to look for new Value
       while (me->next)
       {
         me = me->next;
-        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO (it will be added))
-        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0 && strcmp_P(me->name, PSTR("MOTDETAT")) != 0)
-          _httpJeedomRequest += String("&") + (char *)me->name + '=' + (char *)me->value;
+        //publish All labels (publishAll passed) Or new/updated ones only (And name is not ADCO)
+        if ((publishAll || (me->flags & (TINFO_FLAGS_ADDED | TINFO_FLAGS_UPDATED))) && strcmp_P(me->name, PSTR("ADCO")) != 0)
+        {
+          _httpJeedomRequest += String(",\"") + (char *)me->name + F("\":\"") + (char *)me->value + '"';
+          sendNeeded = true;
+        }
       }
-      //do we need to send data
-      if (_httpJeedomRequest == "")
-        return;
 
-      completeURI += _httpJeedomRequest;
+      //close data list to send
+      _httpJeedomRequest += F("}}}");
+
+      //do we need to send data
+      if (!sendNeeded)
+        return;
 
       //Replace placeholders
       if (completeURI.indexOf(F("$tls$")) != -1)
@@ -115,9 +122,6 @@ void WebTeleInfo::publishTick(bool publishAll = true)
 
       if (completeURI.indexOf(F("$apikey$")) != -1)
         completeURI.replace(F("$apikey$"), _ha.http.jeedom.apiKey);
-
-      if (completeURI.indexOf(F("$adco$")) != -1)
-        completeURI.replace(F("$adco$"), _ADCO);
 
       //create HTTP request objects
       HTTPClient http;
@@ -134,7 +138,9 @@ void WebTeleInfo::publishTick(bool publishAll = true)
         http.begin(_wifiClientSecure, completeURI);
       }
 
-      _haSendResult = (http.GET() == 200);
+      http.addHeader("Content-Type", "application/json");
+
+      _haSendResult = (http.POST(_httpJeedomRequest.c_str()) == 200);
       http.end();
 
       //Send published values to Web clients through EventSource
