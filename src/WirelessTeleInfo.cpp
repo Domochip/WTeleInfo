@@ -391,7 +391,7 @@ bool WebTeleInfo::parseConfigWebRequest(AsyncWebServerRequest *request)
         _ha.protocol = HA_PROTO_DISABLED;
       break;
     case HA_HTTP_JEEDOM_TELEINFO:
-      char tempApiKey[48 + 1];
+      char tempApiKey[64 + 1];
       //put apiKey into temporary one for predefpassword
       if (request->hasParam(F("hahjak"), true) && request->getParam(F("hahjak"), true)->value().length() < sizeof(tempApiKey))
         strcpy(tempApiKey, request->getParam(F("hahjak"), true)->value().c_str());

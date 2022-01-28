@@ -32,7 +32,7 @@ private:
     } generic;
     struct
     {
-      char apiKey[48 + 1] = {0};
+      char apiKey[64 + 1] = {0};
     } jeedom;
   } HTTP;
 
