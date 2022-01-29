@@ -213,7 +213,6 @@ void WebTeleInfo::publishTick(bool publishAll = true)
 // TeleInfo CallBack function (when a new Frame has been fully received)
 void WebTeleInfo::tinfoNewFrame(ValueList *me)
 {
-
 }
 
 //------------------------------------------
@@ -566,7 +565,6 @@ bool WebTeleInfo::appInit(bool reInit = false)
   //Initialize _tinfo (clear all labels, clear buffer, update mode)
   _tinfo.init(_tinfoMode);
 
-
   //Stop Publish
   _publishTicker.detach();
 
@@ -595,7 +593,8 @@ bool WebTeleInfo::appInit(bool reInit = false)
   if (_ha.protocol != HA_PROTO_DISABLED && _ha.uploadPeriod != 0)
   {
     publishTick(); //if configuration changed, publish immediately
-    _publishTicker.attach(_ha.uploadPeriod, [this]() { this->_needPublish = true; });
+    _publishTicker.attach(_ha.uploadPeriod, [this]()
+                          { this->_needPublish = true; });
   }
 
   return true;
@@ -639,32 +638,32 @@ size_t WebTeleInfo::getHTMLContentSize(WebPageForPlaceHolder wp)
 //code to register web request answer to the web server
 void WebTeleInfo::appInitWebServer(AsyncWebServer &server, bool &shouldReboot, bool &pauseApplication)
 {
-  server.on("/getLabel", HTTP_GET, [this](AsyncWebServerRequest *request) {
-    //if no name passed
-    if (!request->hasParam(F("name")))
-    {
-      //return error
-      request->send(400, F("text/html"), F("Missing parameter"));
-      return;
-    }
-    //if name passed is empty
-    if (request->getParam(F("name"))->value().length() == 0)
-    {
-      //return error
-      request->send(400, F("text/html"), F("Incorrect label name"));
-      return;
-    }
-    String labelResponse = getLabel(request->getParam(F("name"))->value());
-    //if return value is empty, label were not found
-    if (!labelResponse.length())
-      request->send(500, F("text/html"), F("Label cannot be found"));
-    else
-      request->send(200, F("text/json"), labelResponse); //value returned to client
-  });
+  server.on("/getLabel", HTTP_GET, [this](AsyncWebServerRequest *request)
+            {
+              //if no name passed
+              if (!request->hasParam(F("name")))
+              {
+                //return error
+                request->send(400, F("text/html"), F("Missing parameter"));
+                return;
+              }
+              //if name passed is empty
+              if (request->getParam(F("name"))->value().length() == 0)
+              {
+                //return error
+                request->send(400, F("text/html"), F("Incorrect label name"));
+                return;
+              }
+              String labelResponse = getLabel(request->getParam(F("name"))->value());
+              //if return value is empty, label were not found
+              if (!labelResponse.length())
+                request->send(500, F("text/html"), F("Label cannot be found"));
+              else
+                request->send(200, F("text/json"), labelResponse); //value returned to client
+            });
 
-  server.on("/getAllLabel", HTTP_GET, [this](AsyncWebServerRequest *request) {
-    request->send(200, F("text/json"), getAllLabel());
-  });
+  server.on("/getAllLabel", HTTP_GET, [this](AsyncWebServerRequest *request)
+            { request->send(200, F("text/json"), getAllLabel()); });
 }
 
 //------------------------------------------
@@ -692,10 +691,8 @@ WebTeleInfo::WebTeleInfo(char appId, String appName) : Application(appId, appNam
   // Init and configure TeleInfo
   _SN[0] = 0;
   _tinfo.init(_tinfoMode);
-  _tinfo.attachUpdatedFrame([this](ValueList *vl) {
-    this->tinfoUpdatedFrame(vl);
-  });
-  _tinfo.attachNewFrame([this](ValueList *vl) {
-    this->tinfoNewFrame(vl);
-  });
+  _tinfo.attachUpdatedFrame([this](ValueList *vl)
+                            { this->tinfoUpdatedFrame(vl); });
+  _tinfo.attachNewFrame([this](ValueList *vl)
+                        { this->tinfoNewFrame(vl); });
 }
