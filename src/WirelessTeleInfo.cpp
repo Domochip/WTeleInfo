@@ -309,7 +309,7 @@ void WebTeleInfo::setConfigDefaultValues()
   _ha.mqtt.port = 1883;
   _ha.mqtt.username[0] = 0;
   _ha.mqtt.password[0] = 0;
-  _ha.mqtt.generic.baseTopic[0] = 0;
+  strcpy_P(_ha.mqtt.generic.baseTopic, PSTR(APPLICATION1_NAME));
 }
 //------------------------------------------
 //Parse JSON object into configuration properties
