@@ -133,7 +133,7 @@ class TInfo
     _State_e      process (char c);
     void          attachADPS(void (*_fn_ADPS)(uint8_t phase));
     void          attachData(void (*_fn_data)(ValueList * valueslist, uint8_t state));
-    void          attachNewFrame(std::function<void(ValueList*)> fn_new_frame);
+    void          attachNewFrame(void (*_fn_new_frame)(ValueList * valueslist));
     void          attachUpdatedFrame(std::function<void(ValueList*)> fn_updated_frame);
     ValueList *   addCustomValue(char * name, char * value, uint8_t * flags);
     ValueList *   getList(void);
@@ -162,7 +162,7 @@ class TInfo
     boolean   _frame_updated; // Data on the frame has been updated
     void      (*_fn_ADPS)(uint8_t phase);
     void      (*_fn_data)(ValueList * valueslist, uint8_t state);
-    std::function<void(ValueList*)> _fn_new_frame;
+    void      (*_fn_new_frame)(ValueList * valueslist);
     std::function<void(ValueList*)> _fn_updated_frame;
 
     //volatile uint8_t *dcport;

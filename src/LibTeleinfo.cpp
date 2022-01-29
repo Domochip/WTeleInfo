@@ -110,7 +110,7 @@ Input   : callback function
 Output  : - 
 Comments: -
 ====================================================================== */
-void TInfo::attachNewFrame(std::function<void(ValueList*)> fn_new_frame)
+void TInfo::attachNewFrame(void (*fn_new_frame)(ValueList * valueslist))
 {
   // indicate the user callback
   _fn_new_frame = fn_new_frame;   
