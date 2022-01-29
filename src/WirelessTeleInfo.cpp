@@ -192,8 +192,11 @@ void WebTeleInfo::publishTick(bool publishAll = true)
           //copy completeTopic in order to "complete" it ...
           String thisLabelTopic = completeTopic;
 
+          String name(me->name);
+          name.replace(F("+"), F("plus")); // avoid fobidden '+' sign in topic (NJOURF+1 & PJOURF+1)
+
           //add the label name
-          thisLabelTopic += (char *)me->name;
+          thisLabelTopic += name;
 
           //send
           _haSendResult = _mqttMan.publish(thisLabelTopic.c_str(), me->value);
