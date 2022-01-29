@@ -81,6 +81,7 @@ private:
 
   MQTTMan _mqttMan;
 
+  void tinfoNewFrame(ValueList *me);
   void tinfoUpdatedFrame(ValueList *me);
   String getLabel(const String &labelName);
   String getAllLabel();

@@ -210,6 +210,13 @@ void WebTeleInfo::publishTick(bool publishAll = true)
 }
 
 //------------------------------------------
+// TeleInfo CallBack function (when a new Frame has been fully received)
+void WebTeleInfo::tinfoNewFrame(ValueList *me)
+{
+
+}
+
+//------------------------------------------
 // TeleInfo CallBack function (when value change occured)
 void WebTeleInfo::tinfoUpdatedFrame(ValueList *me)
 {
@@ -687,5 +694,8 @@ WebTeleInfo::WebTeleInfo(char appId, String appName) : Application(appId, appNam
   _tinfo.init(_tinfoMode);
   _tinfo.attachUpdatedFrame([this](ValueList *vl) {
     this->tinfoUpdatedFrame(vl);
+  });
+  _tinfo.attachNewFrame([this](ValueList *vl) {
+    this->tinfoNewFrame(vl);
   });
 }
