@@ -19,6 +19,7 @@
         for(k in liveData){
             kForId=(/[^a-zA-Z]/.test(k[0]) ? 'a' : '')+k; //k[0] is not in a-zA-Z then we need to add 'a'
             kForId=kForId.replace(/ /g,'_');
+            kForId=kForId.replace(/\+/g,'plus');
             if($(qsp+'#'+kForId) != undefined){
                 var existingElement= $(qsp+'#'+kForId+'Value');
                 if(existingElement.tagName=='INPUT'){
