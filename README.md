@@ -25,7 +25,7 @@ Le projet du boitier (Fusion 360) se trouve dans le dossier `box`
 
 ### Flash
 
-Le firmware Tasmota-téléinfo est utilisé pour animé le D1Mini
+Le firmware Tasmota-téléinfo est utilisé pour animer le D1Mini  
 Vous pouvez le flasher directement depuis la page web "Install tasmota"
 https://tasmota.github.io/install/
 
